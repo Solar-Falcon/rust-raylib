@@ -115,6 +115,7 @@ fn format_type(data_type: &str) -> String {
         "unsigned long long" => "core::ffi::c_ulonglong",
         "signed long long" | "long long" => "core::ffi::c_longlong",
         "void" => "core::ffi::c_void",
+        "va_list" => "*mut core::ffi::c_void",
         _ => dt,
     };
 
@@ -237,7 +238,7 @@ impl Function {
 
     fn generate_code_as_function(&self, code: &mut String) {
         code.push_str(&format!("/// {}\n", self.description));
-        code.push_str(&format!("pub unsafe extern \"C\" fn {}", self.name));
+        code.push_str(&format!("pub fn {}", self.name));
 
         self.generate_code_common(code);
 
@@ -325,9 +326,13 @@ impl Api {
             cb.generate_code_as_callback(&mut code);
         }
 
+        code.push_str("\nextern \"C\" {\n");
+
         for func in self.functions.iter() {
             func.generate_code_as_function(&mut code);
         }
+
+        code.push_str("}\n");
 
         code
     }
