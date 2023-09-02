@@ -1,7 +1,6 @@
 use crate::ffi;
 
 use std::ffi::CString;
-use std::mem::transmute;
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
@@ -58,6 +57,18 @@ pub struct Rectangle {
 
 assert_eq_size!(Rectangle, ffi::Rectangle);
 assert_eq_align!(Rectangle, ffi::Rectangle);
+
+impl Rectangle {
+    #[inline]
+    pub const fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+}
 
 // /// Camera type fallback, defaults to Camera3D
 // pub type Camera = Camera3D;
