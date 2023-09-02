@@ -8,10 +8,9 @@ use static_assertions::{assert_eq_align, assert_eq_size};
 // remaining enum imports
 // TODO: move to respective modules
 // pub use ffi::{
-//     BlendMode, CubemapLayout, FontType,
-//     MaterialMapIndex, NPatchLayout,
+//     BlendMode, FontType,
+//     MaterialMapIndex,
 //     ShaderAttributeDataType, ShaderLocationIndex, ShaderUniformDataType,
-//     TextureFilter, TextureWrap,
 // };
 // </temporary>
 

@@ -8,13 +8,34 @@ use std::{ffi::CString, mem::transmute, ops::Deref, sync::Arc};
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
-pub use crate::ffi::PixelFormat;
+pub use crate::ffi::{CubemapLayout, NPatchLayout, PixelFormat, TextureFilter, TextureWrap};
 
 /// Get pixel data size in bytes for certain format
 #[inline]
 pub fn get_pixel_data_size(width: u32, height: u32, format: PixelFormat) -> usize {
     unsafe { ffi::GetPixelDataSize(width as _, height as _, format as _) as usize }
 }
+
+/// NPatchInfo, n-patch layout info
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct NPatchInfo {
+    /// Texture source rectangle
+    pub source: Rectangle,
+    /// Left border offset
+    pub left: i32,
+    /// Top border offset
+    pub top: i32,
+    /// Right border offset
+    pub right: i32,
+    /// Bottom border offset
+    pub bottom: i32,
+    /// Layout of the n-patch: 3x3, 1x3 or 3x1
+    pub layout: NPatchLayout,
+}
+
+assert_eq_size!(NPatchInfo, ffi::NPatchInfo);
+assert_eq_align!(NPatchInfo, ffi::NPatchInfo);
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -880,11 +901,13 @@ impl Image {
         }
     }
 
+    /// Get pixel data size in bytes for this image
     #[inline]
     pub fn get_pixel_data_size(&self) -> usize {
         unsafe { ffi::GetPixelDataSize(self.raw.width, self.raw.height, self.raw.format) as usize }
     }
 
+    /// Returns a rectangle with x = 0, y = 0; width and height correspond to image's dimensions
     #[inline]
     pub fn rectangle(&self) -> Rectangle {
         Rectangle::new(0., 0., self.raw.width as f32, self.raw.height as f32)
@@ -917,11 +940,283 @@ pub struct Texture {
     pub(crate) raw: Arc<ffi::Texture>,
 }
 
+impl Texture {
+    /// Texture base width
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.raw.width as u32
+    }
+
+    /// Texture base height
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.raw.height as u32
+    }
+
+    /// Mipmap levels, 1 by default
+    #[inline]
+    pub fn mipmaps(&self) -> u32 {
+        self.raw.mipmaps as u32
+    }
+
+    /// Data format
+    #[inline]
+    pub fn format(&self) -> PixelFormat {
+        unsafe { transmute(self.raw.format) }
+    }
+
+    /// Load texture from file into GPU memory (VRAM)
+    #[inline]
+    pub fn from_file(filename: &str) -> Self {
+        let filename = CString::new(filename).unwrap();
+
+        Self {
+            raw: Arc::new(unsafe { ffi::LoadTexture(filename.as_ptr()) }),
+        }
+    }
+
+    /// Load texture from image data
+    #[inline]
+    pub fn from_image(image: &Image) -> Self {
+        Self {
+            raw: Arc::new(unsafe { ffi::LoadTextureFromImage(image.raw.clone()) }),
+        }
+    }
+
+    /// Load cubemap from image, multiple image cubemap layouts supported
+    #[inline]
+    pub fn from_cubemap(image: &Image, layout: CubemapLayout) -> TextureCubemap {
+        Self {
+            raw: Arc::new(unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) }),
+        }
+    }
+
+    /// Check if a texture is ready
+    #[inline]
+    pub fn is_ready(&self) -> bool {
+        unsafe { ffi::IsTextureReady(self.raw.deref().clone()) }
+    }
+
+    /// Update GPU texture with new data
+    ///
+    /// Returns `true` on success, `false` if `pixels` has wrong size (use [`get_pixel_data_size()`])
+    #[inline]
+    pub fn update(&mut self, pixels: &[u8]) -> bool {
+        if pixels.len() == self.get_pixel_data_size() {
+            unsafe {
+                ffi::UpdateTexture(self.raw.deref().clone(), pixels.as_ptr() as *const _);
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Update GPU texture rectangle with new data
+    ///
+    /// Returns `true` on success, `false` if `pixels` has wrong size or `rect` goes out of bounds
+    #[inline]
+    pub fn update_rect(&mut self, rect: Rectangle, pixels: &[u8]) -> bool {
+        if pixels.len() == get_pixel_data_size(rect.width as u32, rect.height as u32, self.format())
+            && rect.x >= 0.
+            && rect.y >= 0.
+            && ((rect.x + rect.width) as u32) < self.width()
+            && ((rect.y + rect.height) as u32) < self.height()
+        {
+            unsafe {
+                ffi::UpdateTextureRec(
+                    self.raw.deref().clone(),
+                    transmute(rect),
+                    pixels.as_ptr() as *const _,
+                );
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get pixel data size in bytes for this texture
+    #[inline]
+    pub fn get_pixel_data_size(&self) -> usize {
+        get_pixel_data_size(self.width(), self.height(), self.format())
+    }
+
+    /// Generate GPU mipmaps for a texture
+    #[inline]
+    pub fn generate_mipmaps(&mut self) -> bool {
+        if let Some(texture) = Arc::get_mut(&mut self.raw) {
+            unsafe {
+                ffi::GenTextureMipmaps(texture as *mut _);
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set texture scaling filter mode
+    #[inline]
+    pub fn set_filter(&mut self, filter: TextureFilter) {
+        unsafe { ffi::SetTextureFilter(self.raw.deref().clone(), filter as _) }
+    }
+
+    /// Set texture wrapping mode
+    #[inline]
+    pub fn set_wrap(&mut self, wrap: TextureWrap) {
+        unsafe { ffi::SetTextureWrap(self.raw.deref().clone(), wrap as _) }
+    }
+
+    /// Draw a Texture2D
+    #[inline]
+    pub fn draw(&self, _raylib: &mut Raylib, x: i32, y: i32, tint: Color) {
+        unsafe { ffi::DrawTexture(self.raw.deref().clone(), x, y, transmute(tint)) }
+    }
+
+    /// Draw a Texture2D with position defined as Vector2
+    #[inline]
+    pub fn draw_v(&self, _raylib: &mut Raylib, pos: Vector2, tint: Color) {
+        unsafe { ffi::DrawTextureV(self.raw.deref().clone(), transmute(pos), transmute(tint)) }
+    }
+
+    /// Draw a Texture2D with extended parameters
+    #[inline]
+    pub fn draw_ex(
+        &self,
+        _raylib: &mut Raylib,
+        pos: Vector2,
+        rotation: f32,
+        scale: f32,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawTextureEx(
+                self.raw.deref().clone(),
+                transmute(pos),
+                rotation,
+                scale,
+                transmute(tint),
+            )
+        }
+    }
+
+    /// Draw a part of a texture defined by a rectangle
+    #[inline]
+    pub fn draw_rect(&self, _raylib: &mut Raylib, source: Rectangle, pos: Vector2, tint: Color) {
+        // rectangle checks?
+        unsafe {
+            ffi::DrawTextureRec(
+                self.raw.deref().clone(),
+                transmute(source),
+                transmute(pos),
+                transmute(tint),
+            )
+        }
+    }
+
+    /// Draw a part of a texture defined by a rectangle with 'pro' parameters
+    #[inline]
+    pub fn draw_pro(
+        &self,
+        source: Rectangle,
+        dest: Rectangle,
+        origin: Vector2,
+        rotation: f32,
+        tint: Color,
+    ) {
+        // rectangle checks?
+        unsafe {
+            ffi::DrawTexturePro(
+                self.raw.deref().clone(),
+                transmute(source),
+                transmute(dest),
+                transmute(origin),
+                rotation,
+                transmute(tint),
+            )
+        }
+    }
+
+    /// Draws a texture (or part of it) that stretches or shrinks nicely
+    #[inline]
+    pub fn draw_patch(
+        &self,
+        _raylib: &mut Raylib,
+        patch_info: NPatchInfo,
+        dest: Rectangle,
+        origin: Vector2,
+        rotation: f32,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawTextureNPatch(
+                self.raw.deref().clone(),
+                transmute(patch_info),
+                transmute(dest),
+                transmute(origin),
+                rotation,
+                transmute(tint),
+            )
+        }
+    }
+}
+
+impl Drop for Texture {
+    #[inline]
+    fn drop(&mut self) {
+        if Arc::strong_count(&self.raw) == 1 {
+            unsafe { ffi::UnloadTexture(self.raw.deref().clone()) }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RenderTexture {
+    pub(crate) raw: Arc<ffi::RenderTexture>,
+}
+
+impl RenderTexture {
+    /// Texture base width
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.raw.texture.width as u32
+    }
+
+    /// Texture base height
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.raw.texture.height as u32
+    }
+
+    /// Load texture for rendering (framebuffer)
+    #[inline]
+    pub fn new(width: u32, height: u32) -> Self {
+        Self {
+            raw: Arc::new(unsafe { ffi::LoadRenderTexture(width as _, height as _) }),
+        }
+    }
+
+    /// Check if a render texture is ready
+    #[inline]
+    pub fn is_ready(&self) -> bool {
+        unsafe { ffi::IsRenderTextureReady(self.raw.deref().clone()) }
+    }
+}
+
+impl Drop for RenderTexture {
+    #[inline]
+    fn drop(&mut self) {
+        if Arc::strong_count(&self.raw) == 1 {
+            unsafe { ffi::UnloadRenderTexture(self.raw.deref().clone()) }
+        }
+    }
+}
+
 /// Texture2D, same as Texture
 pub type Texture2D = Texture;
 
 /// TextureCubemap, same as Texture
 pub type TextureCubemap = Texture;
 
-// /// RenderTexture2D, same as RenderTexture
-// pub type RenderTexture2D = RenderTexture;
+/// RenderTexture2D, same as RenderTexture
+pub type RenderTexture2D = RenderTexture;
