@@ -27,7 +27,7 @@ impl Definition {
                     self.value.as_str().unwrap()
                 ));
             }
-            _ => {} // sorry colors, I'll add you someday
+            _ => {}
         }
     }
 }
@@ -137,8 +137,8 @@ struct Enum {
 }
 
 impl Enum {
-    fn prefix_count(enum_name: &str) -> usize {
-        match enum_name {
+    fn prefix_count(&self) -> usize {
+        match self.name.as_str() {
             "CubemapLayout"
             | "GamepadAxis"
             | "GamepadButton"
@@ -155,8 +155,12 @@ impl Enum {
         }
     }
 
-    fn format_value_name(enum_name: &str, value_name: &str) -> String {
-        let skips = Self::prefix_count(enum_name);
+    fn is_bitflags(&self) -> bool {
+        matches!(self.name.as_str(), "ConfigFlags" | "Gesture")
+    }
+
+    fn format_value_name(&self, value_name: &str) -> String {
+        let skips = self.prefix_count();
         let parts = value_name.split('_').skip(skips);
 
         parts
@@ -164,15 +168,14 @@ impl Enum {
                 let mut s = s.to_string();
 
                 if s.len() > 1
-                    && !(enum_name == "PixelFormat" && s.contains(|c: char| c.is_ascii_digit()))
+                    && !(self.name == "PixelFormat" && s.contains(|c: char| c.is_ascii_digit()))
                 {
                     s[1..].make_ascii_lowercase();
                 }
 
                 s
             })
-            .collect::<Vec<_>>()
-            .join("")
+            .collect::<String>()
     }
 
     fn generate_code(&self, code: &mut String) {
@@ -183,6 +186,11 @@ impl Enum {
         code.push_str(
             "#[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]\n",
         );
+
+        if self.is_bitflags() {
+            self.generate_bitflags(code);
+            return;
+        }
 
         code.push_str(&format!("pub enum {} {{\n", self.name));
 
@@ -195,7 +203,7 @@ impl Enum {
                 code.push_str(&format!("\t/// {}\n", value.description));
                 code.push_str(&format!(
                     "\t{} = {},\n",
-                    Self::format_value_name(&self.name, &value.name),
+                    self.format_value_name(&value.name),
                     value.value
                 ));
             }
@@ -203,6 +211,29 @@ impl Enum {
         }
 
         code.push_str("}\n");
+    }
+
+    fn generate_bitflags(&self, code: &mut String) {
+        code.push_str(&format!("pub struct {}(u32);\n\n", self.name));
+        code.push_str(&format!(
+            "bitflags::bitflags! {{\n\timpl {}: u32 {{\n",
+            self.name
+        ));
+
+        for value in self.values.iter() {
+            code.push_str(&format!("\t\t/// {}\n", value.description));
+
+            let name = value
+                .name
+                .split_inclusive('_')
+                .skip(self.prefix_count())
+                .collect::<String>();
+
+            code.push_str(&format!("\t\tconst {} = {};\n", name, value.value));
+        }
+        code.push_str("\n\t\tconst _ = !0;\n");
+
+        code.push_str("\t}\n}\n");
     }
 }
 
@@ -237,8 +268,8 @@ impl Function {
     }
 
     fn generate_code_as_function(&self, code: &mut String) {
-        code.push_str(&format!("/// {}\n", self.description));
-        code.push_str(&format!("pub fn {}", self.name));
+        code.push_str(&format!("\t/// {}\n", self.description));
+        code.push_str(&format!("\tpub fn {}", self.name));
 
         self.generate_code_common(code);
 
@@ -248,15 +279,15 @@ impl Function {
     fn generate_code_common(&self, code: &mut String) {
         code.push('(');
 
-        let name = if self.name == "type" {
-            "r#type"
-        } else if self.name == "box" {
-            "r#box"
-        } else {
-            self.name.as_str()
-        };
-
         for param in self.params.iter() {
+            let name = if param.name == "type" {
+                "r#type"
+            } else if param.name == "box" {
+                "r#box"
+            } else {
+                param.name.as_str()
+            };
+
             if param.data_type == "..." {
                 code.push_str("..., ");
             } else {
@@ -276,6 +307,35 @@ impl Function {
     }
 }
 
+const COLORS: &[(&str, [u8; 4])] = &[
+    ("LIGHTGRAY", [200, 200, 200, 255]),
+    ("GRAY", [130, 130, 130, 255]),
+    ("DARKGRAY", [80, 80, 80, 255]),
+    ("YELLOW", [253, 249, 0, 255]),
+    ("GOLD", [255, 203, 0, 255]),
+    ("ORANGE", [255, 161, 0, 255]),
+    ("PINK", [255, 109, 194, 255]),
+    ("RED", [230, 41, 55, 255]),
+    ("MAROON", [190, 33, 55, 255]),
+    ("GREEN", [0, 228, 48, 255]),
+    ("LIME", [0, 158, 47, 255]),
+    ("DARKGREEN", [0, 117, 44, 255]),
+    ("SKYBLUE", [102, 191, 255, 255]),
+    ("BLUE", [0, 121, 241, 255]),
+    ("DARKBLUE", [0, 82, 172, 255]),
+    ("PURPLE", [200, 122, 255, 255]),
+    ("VIOLET", [135, 60, 190, 255]),
+    ("DARKPURPLE", [112, 31, 126, 255]),
+    ("BEIGE", [211, 176, 131, 255]),
+    ("BROWN", [127, 106, 79, 255]),
+    ("DARKBROWN", [76, 63, 47, 255]),
+    ("WHITE", [255, 255, 255, 255]),
+    ("BLACK", [0, 0, 0, 255]),
+    ("BLANK", [0, 0, 0, 0]),
+    ("MAGENTA", [255, 0, 255, 255]),
+    ("RAYWHITE", [245, 245, 245, 255]),
+];
+
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Api {
     defines: Vec<Definition>,
@@ -292,13 +352,22 @@ impl Api {
 
         // Aren't included in raylib.h
         code.push_str("pub const MAX_SHADER_LOCATIONS: usize = 32;\n");
-        code.push_str("pub const MAX_MATERIAL_MAPS: usize = 12;\n");
+        code.push_str("pub const MAX_MATERIAL_MAPS: usize = 12;\n\n");
         code.push_str(
             "#[repr(C)]\npub struct rAudioBuffer { _empty: core::marker::PhantomData<()> }\n",
         );
         code.push_str(
-            "#[repr(C)]\npub struct rAudioProcessor { _empty: core::marker::PhantomData<()> }\n",
+            "#[repr(C)]\npub struct rAudioProcessor { _empty: core::marker::PhantomData<()> }\n\n",
         );
+
+        code.push_str("pub mod colors {\n");
+        for (name, [r, g, b, a]) in COLORS.iter() {
+            code.push_str(&format!(
+                "\tpub const {}: super::Color = super::Color {{ r: {}, g: {}, b: {}, a: {} }};\n",
+                name, r, g, b, a
+            ));
+        }
+        code.push_str("}\n\n");
 
         for define in self.defines.iter() {
             define.generate_code(&mut code);
