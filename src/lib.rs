@@ -5,6 +5,8 @@ pub use ffi::{RAYLIB_VERSION, RAYLIB_VERSION_MAJOR, RAYLIB_VERSION_MINOR, RAYLIB
 
 /// Color type and color constants
 pub mod color;
+/// Collision checks between different shapes
+pub mod collision;
 /// Drawing traits and functions
 pub mod drawing;
 /// Math types

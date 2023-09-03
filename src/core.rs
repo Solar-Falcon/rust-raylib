@@ -1,8 +1,6 @@
-use crate::{color::Color, ffi, math::Vector2, texture::Image};
+use crate::{color::Color, ffi, math::Vector2, texture::Image, drawing::DrawHandle};
 
 use std::{ffi::{CStr, CString}, time::Duration};
-
-// TODO: include SetWindowFlags into smth like init_window_ex(..., ConfigFlags)
 
 pub use ffi::{
     ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
@@ -737,6 +735,14 @@ impl Raylib {
     #[inline]
     pub fn get_gesture_pinch_angle(&self) -> f32 {
         unsafe { ffi::GetGesturePinchAngle() }
+    }
+
+    /// Setup canvas (framebuffer) to start drawing
+    #[inline]
+    pub fn begin_drawing(&mut self) -> DrawHandle {
+        unsafe { ffi::BeginDrawing(); }
+
+        DrawHandle(self)
     }
 }
 

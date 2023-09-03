@@ -11,7 +11,7 @@ pub use crate::ffi::{ShaderAttributeDataType, ShaderLocationIndex, ShaderUniform
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Shader {
-    raw: Rc<ffi::Shader>,
+    pub(crate) raw: Rc<ffi::Shader>,
 }
 
 impl Shader {
@@ -146,7 +146,7 @@ impl Drop for Shader {
     }
 }
 
-pub trait ShaderValue {
+pub trait ShaderValue where Self: Sized {
     const UNIFORM_TYPE: ShaderUniformDataType;
 
     unsafe fn raw_value(&self) -> *const core::ffi::c_void {
