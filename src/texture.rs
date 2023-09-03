@@ -1,10 +1,12 @@
 use crate::{
-    core::{Raylib, Rectangle, Vector2, Vector3, Vector4},
+    color::Color,
+    core::Raylib,
     ffi,
+    math::{Rectangle, Vector2},
     text::Font,
 };
 
-use std::{ffi::CString, mem::transmute, ops::Deref, rc::Rc};
+use std::{ffi::CString, ops::Deref, rc::Rc};
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
@@ -37,156 +39,17 @@ pub struct NPatchInfo {
 assert_eq_size!(NPatchInfo, ffi::NPatchInfo);
 assert_eq_align!(NPatchInfo, ffi::NPatchInfo);
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
+impl Into<ffi::NPatchInfo> for NPatchInfo {
+    #[inline]
+    fn into(self) -> ffi::NPatchInfo {
+        unsafe { std::mem::transmute(self) }
+    }
 }
 
-assert_eq_size!(Color, ffi::Color);
-assert_eq_align!(Color, ffi::Color);
-
-impl Color {
+impl From<ffi::NPatchInfo> for NPatchInfo {
     #[inline]
-    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self { r, g, b, a }
-    }
-
-    /// Get color with alpha applied, alpha goes from 0.0f to 1.0f
-    #[inline]
-    pub fn fade(self, alpha: f32) -> Self {
-        unsafe { transmute(ffi::Fade(transmute(self), alpha)) }
-    }
-
-    /// Get hexadecimal value for a Color
-    #[inline]
-    pub fn to_hex(self) -> u32 {
-        // no real need to use ffi here
-        ((self.r as u32) << 24) | ((self.g as u32) << 16) | ((self.b as u32) << 8) | (self.a as u32)
-    }
-
-    /// Get Color structure from hexadecimal value
-    #[inline]
-    pub fn from_hex(val: u32) -> Self {
-        // no real need to use ffi here
-        Self {
-            r: (val >> 24 & 0xFF) as u8,
-            g: (val >> 16 & 0xFF) as u8,
-            b: (val >> 8 & 0xFF) as u8,
-            a: (val & 0xFF) as u8,
-        }
-    }
-
-    /// Get Color normalized as float [0..1]
-    #[inline]
-    pub fn normalize(self) -> Vector4 {
-        // no real need to use ffi here
-        Vector4 {
-            x: self.r as f32 / 255.,
-            y: self.g as f32 / 255.,
-            z: self.b as f32 / 255.,
-            w: self.a as f32 / 255.,
-        }
-    }
-
-    /// Get Color from normalized values [0..1]
-    #[inline]
-    pub fn from_normalized(normalized: Vector4) -> Self {
-        // no real need to use ffi here
-        Self {
-            r: (normalized.x * 255.) as u8,
-            g: (normalized.y * 255.) as u8,
-            b: (normalized.z * 255.) as u8,
-            a: (normalized.w * 255.) as u8,
-        }
-    }
-
-    /// Get HSV values for a Color, hue [0..360], saturation/value [0..1]
-    #[inline]
-    pub fn to_hsv(self) -> Vector3 {
-        unsafe { transmute(ffi::ColorToHSV(transmute(self))) }
-    }
-
-    /// Get a Color from HSV values, hue [0..360], saturation/value [0..1]
-    #[inline]
-    pub fn from_hsv(hue: f32, saturation: f32, value: f32) -> Self {
-        unsafe { transmute(ffi::ColorFromHSV(hue, saturation, value)) }
-    }
-
-    /// Get color multiplied with another color
-    #[inline]
-    pub fn tint(self, tint: Self) -> Self {
-        unsafe { transmute(ffi::ColorTint(transmute(self), transmute(tint))) }
-    }
-
-    /// Get color with brightness correction, brightness factor goes from -1.0f to 1.0f
-    #[inline]
-    pub fn brightness(self, factor: f32) -> Self {
-        unsafe { transmute(ffi::ColorBrightness(transmute(self), factor)) }
-    }
-
-    /// Get color with contrast correction, contrast values between -1.0f and 1.0f
-    #[inline]
-    pub fn contrast(self, contrast: f32) -> Self {
-        unsafe { transmute(ffi::ColorContrast(transmute(self), contrast)) }
-    }
-
-    /// Get color with alpha applied, alpha goes from 0.0f to 1.0f
-    #[inline]
-    pub fn alpha(self, alpha: f32) -> Self {
-        unsafe { transmute(ffi::ColorAlpha(transmute(self), alpha)) }
-    }
-
-    /// Get src alpha-blended into dst color with tint
-    #[inline]
-    pub fn alpha_blend(self, src: Self, tint: Self) -> Self {
-        unsafe {
-            transmute(ffi::ColorAlphaBlend(
-                transmute(self),
-                transmute(src),
-                transmute(tint),
-            ))
-        }
-    }
-
-    /// Get Color from a source pixel pointer of certain format (uncompressed formats only)
-    ///
-    /// Returns `None` if buffer isn't large enough
-    #[inline]
-    pub fn get_pixel_color(source: &[u8], format: PixelFormat) -> Option<Self> {
-        if source.len() >= get_pixel_data_size(1, 1, format) {
-            unsafe {
-                Some(transmute(ffi::GetPixelColor(
-                    source.as_ptr() as *mut core::ffi::c_void,
-                    format as _,
-                )))
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Set color formatted into destination pixel pointer (uncompressed formats only)
-    ///
-    /// Returns `true` on success, `false` if buffer isn't large enough
-    #[inline]
-    pub fn set_pixel_color(self, dest: &mut [u8], format: PixelFormat) -> bool {
-        if dest.len() >= get_pixel_data_size(1, 1, format) {
-            unsafe {
-                ffi::SetPixelColor(
-                    dest.as_mut_ptr() as *mut core::ffi::c_void,
-                    transmute(self),
-                    format as _,
-                );
-            }
-            true
-        } else {
-            false
-        }
+    fn from(value: ffi::NPatchInfo) -> Self {
+        unsafe { std::mem::transmute(value) }
     }
 }
 
@@ -218,7 +81,7 @@ impl Image {
     /// Data format
     #[inline]
     pub fn format(&self) -> PixelFormat {
-        unsafe { transmute(self.raw.format) }
+        unsafe { std::mem::transmute(self.raw.format) }
     }
 
     /// Load image from file into CPU memory (RAM)
@@ -322,7 +185,7 @@ impl Image {
     #[inline]
     pub fn generate_color(width: u32, height: u32, color: Color) -> Self {
         Self {
-            raw: unsafe { ffi::GenImageColor(width as _, height as _, transmute(color)) },
+            raw: unsafe { ffi::GenImageColor(width as _, height as _, color.into()) },
         }
     }
 
@@ -331,7 +194,7 @@ impl Image {
     pub fn generate_gradient_vertical(width: u32, height: u32, top: Color, bottom: Color) -> Self {
         Self {
             raw: unsafe {
-                ffi::GenImageGradientV(width as _, height as _, transmute(top), transmute(bottom))
+                ffi::GenImageGradientV(width as _, height as _, top.into(), bottom.into())
             },
         }
     }
@@ -346,7 +209,7 @@ impl Image {
     ) -> Self {
         Self {
             raw: unsafe {
-                ffi::GenImageGradientH(width as _, height as _, transmute(left), transmute(right))
+                ffi::GenImageGradientH(width as _, height as _, left.into(), right.into())
             },
         }
     }
@@ -366,8 +229,8 @@ impl Image {
                     width as _,
                     height as _,
                     density,
-                    transmute(inner),
-                    transmute(outer),
+                    inner.into(),
+                    outer.into(),
                 )
             },
         }
@@ -390,8 +253,8 @@ impl Image {
                     height as _,
                     checks_x as _,
                     checks_y as _,
-                    transmute(color1),
-                    transmute(color2),
+                    color1.into(),
+                    color2.into(),
                 )
             },
         }
@@ -443,7 +306,7 @@ impl Image {
     #[inline]
     pub fn from_other_image(image: Self, rect: Rectangle) -> Self {
         Self {
-            raw: unsafe { ffi::ImageFromImage(image.raw.clone(), transmute(rect)) },
+            raw: unsafe { ffi::ImageFromImage(image.raw.clone(), rect.into()) },
         }
     }
 
@@ -453,7 +316,7 @@ impl Image {
         let text = CString::new(text).unwrap();
 
         Self {
-            raw: unsafe { ffi::ImageText(text.as_ptr(), font_size as _, transmute(color)) },
+            raw: unsafe { ffi::ImageText(text.as_ptr(), font_size as _, color.into()) },
         }
     }
 
@@ -469,7 +332,7 @@ impl Image {
                     text.as_ptr(),
                     font_size,
                     spacing,
-                    transmute(tint),
+                    tint.into(),
                 )
             },
         }
@@ -484,13 +347,13 @@ impl Image {
     /// Convert image to POT (power-of-two)
     #[inline]
     pub fn convert_to_power_of_two(&mut self, fill: Color) {
-        unsafe { ffi::ImageToPOT(self.as_mut_ptr(), transmute(fill)) }
+        unsafe { ffi::ImageToPOT(self.as_mut_ptr(), fill.into()) }
     }
 
     /// Crop an image to a defined rectangle
     #[inline]
     pub fn crop(&mut self, rect: Rectangle) {
-        unsafe { ffi::ImageCrop(self.as_mut_ptr(), transmute(rect)) }
+        unsafe { ffi::ImageCrop(self.as_mut_ptr(), rect.into()) }
     }
 
     /// Crop image depending on alpha value
@@ -502,7 +365,7 @@ impl Image {
     /// Clear alpha channel to desired color
     #[inline]
     pub fn alpha_clear(&mut self, color: Color, threshold: f32) {
-        unsafe { ffi::ImageAlphaClear(self.as_mut_ptr(), transmute(color), threshold) }
+        unsafe { ffi::ImageAlphaClear(self.as_mut_ptr(), color.into(), threshold) }
     }
 
     /// Apply alpha mask to image
@@ -552,7 +415,7 @@ impl Image {
                 new_height as _,
                 offset_x,
                 offset_y,
-                transmute(fill),
+                fill.into(),
             )
         }
     }
@@ -604,7 +467,7 @@ impl Image {
     /// Modify image color: tint
     #[inline]
     pub fn color_tint(&mut self, color: Color) {
-        unsafe { ffi::ImageColorTint(self.as_mut_ptr(), transmute(color)) }
+        unsafe { ffi::ImageColorTint(self.as_mut_ptr(), color.into()) }
     }
 
     /// Modify image color: invert
@@ -634,7 +497,7 @@ impl Image {
     /// Modify image color: replace color
     #[inline]
     pub fn color_replace(&mut self, color: Color, replace: Color) {
-        unsafe { ffi::ImageColorReplace(self.as_mut_ptr(), transmute(color), transmute(replace)) }
+        unsafe { ffi::ImageColorReplace(self.as_mut_ptr(), color.into(), replace.into()) }
     }
 
     /// Load color data from image as a Color array (RGBA - 32bit)
@@ -646,7 +509,7 @@ impl Image {
 
         for i in 0..len {
             unsafe {
-                vec.push(transmute(colors.add(i).read()));
+                vec.push(colors.add(i).read().into());
             }
         }
 
@@ -668,7 +531,7 @@ impl Image {
 
         for i in 0..(count as usize) {
             unsafe {
-                vec.push(transmute(palette.add(i).read()));
+                vec.push(palette.add(i).read().into());
             }
         }
 
@@ -682,31 +545,31 @@ impl Image {
     /// Get image alpha border rectangle
     #[inline]
     pub fn get_alpha_border(&self, threshold: f32) -> Rectangle {
-        unsafe { transmute(ffi::GetImageAlphaBorder(self.raw.clone(), threshold)) }
+        unsafe { ffi::GetImageAlphaBorder(self.raw.clone(), threshold).into() }
     }
 
     /// Get image pixel color at (x, y) position
     #[inline]
     pub fn get_color(&self, x: u32, y: u32) -> Color {
-        unsafe { transmute(ffi::GetImageColor(self.raw.clone(), x as _, y as _)) }
+        unsafe { ffi::GetImageColor(self.raw.clone(), x as _, y as _).into() }
     }
 
     /// Clear image background with given color
     #[inline]
     pub fn clear_background(&mut self, color: Color) {
-        unsafe { ffi::ImageClearBackground(self.as_mut_ptr(), transmute(color)) }
+        unsafe { ffi::ImageClearBackground(self.as_mut_ptr(), color.into()) }
     }
 
     /// Draw pixel within an image
     #[inline]
     pub fn draw_pixel(&mut self, x: u32, y: u32, color: Color) {
-        unsafe { ffi::ImageDrawPixel(self.as_mut_ptr(), x as _, y as _, transmute(color)) }
+        unsafe { ffi::ImageDrawPixel(self.as_mut_ptr(), x as _, y as _, color.into()) }
     }
 
     /// Draw pixel within an image (Vector version)
     #[inline]
     pub fn draw_pixel_v(&mut self, pos: Vector2, color: Color) {
-        unsafe { ffi::ImageDrawPixelV(self.as_mut_ptr(), transmute(pos), transmute(color)) }
+        unsafe { ffi::ImageDrawPixelV(self.as_mut_ptr(), pos.into(), color.into()) }
     }
 
     /// Draw line within an image
@@ -719,7 +582,7 @@ impl Image {
                 start_y as _,
                 end_x as _,
                 end_y as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -727,14 +590,7 @@ impl Image {
     /// Draw line within an image (Vector version)
     #[inline]
     pub fn draw_line_v(&mut self, start: Vector2, end: Vector2, color: Color) {
-        unsafe {
-            ffi::ImageDrawLineV(
-                self.as_mut_ptr(),
-                transmute(start),
-                transmute(end),
-                transmute(color),
-            )
-        }
+        unsafe { ffi::ImageDrawLineV(self.as_mut_ptr(), start.into(), end.into(), color.into()) }
     }
 
     /// Draw a filled circle within an image
@@ -746,7 +602,7 @@ impl Image {
                 center_x as _,
                 center_y as _,
                 radius as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -755,12 +611,7 @@ impl Image {
     #[inline]
     pub fn draw_circle_v(&mut self, center: Vector2, radius: u32, color: Color) {
         unsafe {
-            ffi::ImageDrawCircleV(
-                self.as_mut_ptr(),
-                transmute(center),
-                radius as _,
-                transmute(color),
-            )
+            ffi::ImageDrawCircleV(self.as_mut_ptr(), center.into(), radius as _, color.into())
         }
     }
 
@@ -773,7 +624,7 @@ impl Image {
                 center_x as _,
                 center_y as _,
                 radius as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -782,12 +633,7 @@ impl Image {
     #[inline]
     pub fn draw_circle_lines_v(&mut self, center: Vector2, radius: u32, color: Color) {
         unsafe {
-            ffi::ImageDrawCircleLinesV(
-                self.as_mut_ptr(),
-                transmute(center),
-                radius as _,
-                transmute(color),
-            )
+            ffi::ImageDrawCircleLinesV(self.as_mut_ptr(), center.into(), radius as _, color.into())
         }
     }
 
@@ -801,7 +647,7 @@ impl Image {
                 y as _,
                 width as _,
                 height as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -810,19 +656,14 @@ impl Image {
     #[inline]
     pub fn draw_rectangle_v(&mut self, pos: Vector2, size: Vector2, color: Color) {
         unsafe {
-            ffi::ImageDrawRectangleV(
-                self.as_mut_ptr(),
-                transmute(pos),
-                transmute(size),
-                transmute(color),
-            )
+            ffi::ImageDrawRectangleV(self.as_mut_ptr(), pos.into(), size.into(), color.into())
         }
     }
 
     /// Draw rectangle within an image
     #[inline]
     pub fn draw_rectangle_rect(&mut self, rect: Rectangle, color: Color) {
-        unsafe { ffi::ImageDrawRectangleRec(self.as_mut_ptr(), transmute(rect), transmute(color)) }
+        unsafe { ffi::ImageDrawRectangleRec(self.as_mut_ptr(), rect.into(), color.into()) }
     }
 
     /// Draw rectangle lines within an image
@@ -831,9 +672,9 @@ impl Image {
         unsafe {
             ffi::ImageDrawRectangleLines(
                 self.as_mut_ptr(),
-                transmute(rect),
+                rect.into(),
                 thickness as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -851,9 +692,9 @@ impl Image {
             ffi::ImageDraw(
                 self.as_mut_ptr(),
                 source.raw.clone(),
-                transmute(source_rect),
-                transmute(dest_rect),
-                transmute(tint),
+                source_rect.into(),
+                dest_rect.into(),
+                tint.into(),
             )
         }
     }
@@ -870,7 +711,7 @@ impl Image {
                 x as _,
                 y as _,
                 font_size as _,
-                transmute(color),
+                color.into(),
             )
         }
     }
@@ -893,10 +734,10 @@ impl Image {
                 self.as_mut_ptr(),
                 font.raw.clone(),
                 text.as_ptr(),
-                transmute(pos),
+                pos.into(),
                 font_size,
                 spacing,
-                transmute(tint),
+                tint.into(),
             )
         }
     }
@@ -935,6 +776,7 @@ impl Drop for Image {
     }
 }
 
+/// Texture, tex data stored in GPU memory (VRAM)
 #[derive(Clone, Debug)]
 pub struct Texture {
     pub(crate) raw: Rc<ffi::Texture>,
@@ -962,7 +804,7 @@ impl Texture {
     /// Data format
     #[inline]
     pub fn format(&self) -> PixelFormat {
-        unsafe { transmute(self.raw.format) }
+        unsafe { std::mem::transmute(self.raw.format) }
     }
 
     /// Load texture from file into GPU memory (VRAM)
@@ -1026,7 +868,7 @@ impl Texture {
             unsafe {
                 ffi::UpdateTextureRec(
                     self.raw.deref().clone(),
-                    transmute(rect),
+                    rect.into(),
                     pixels.as_ptr() as *const _,
                 );
             }
@@ -1066,99 +908,6 @@ impl Texture {
     pub fn set_wrap(&mut self, wrap: TextureWrap) {
         unsafe { ffi::SetTextureWrap(self.raw.deref().clone(), wrap as _) }
     }
-
-    /// Draw a Texture2D
-    #[inline]
-    pub fn draw(&self, _raylib: &mut Raylib, x: i32, y: i32, tint: Color) {
-        unsafe { ffi::DrawTexture(self.raw.deref().clone(), x, y, transmute(tint)) }
-    }
-
-    /// Draw a Texture2D with position defined as Vector2
-    #[inline]
-    pub fn draw_v(&self, _raylib: &mut Raylib, pos: Vector2, tint: Color) {
-        unsafe { ffi::DrawTextureV(self.raw.deref().clone(), transmute(pos), transmute(tint)) }
-    }
-
-    /// Draw a Texture2D with extended parameters
-    #[inline]
-    pub fn draw_ex(
-        &self,
-        _raylib: &mut Raylib,
-        pos: Vector2,
-        rotation: f32,
-        scale: f32,
-        tint: Color,
-    ) {
-        unsafe {
-            ffi::DrawTextureEx(
-                self.raw.deref().clone(),
-                transmute(pos),
-                rotation,
-                scale,
-                transmute(tint),
-            )
-        }
-    }
-
-    /// Draw a part of a texture defined by a rectangle
-    #[inline]
-    pub fn draw_rect(&self, _raylib: &mut Raylib, source: Rectangle, pos: Vector2, tint: Color) {
-        // rectangle checks?
-        unsafe {
-            ffi::DrawTextureRec(
-                self.raw.deref().clone(),
-                transmute(source),
-                transmute(pos),
-                transmute(tint),
-            )
-        }
-    }
-
-    /// Draw a part of a texture defined by a rectangle with 'pro' parameters
-    #[inline]
-    pub fn draw_pro(
-        &self,
-        source: Rectangle,
-        dest: Rectangle,
-        origin: Vector2,
-        rotation: f32,
-        tint: Color,
-    ) {
-        // rectangle checks?
-        unsafe {
-            ffi::DrawTexturePro(
-                self.raw.deref().clone(),
-                transmute(source),
-                transmute(dest),
-                transmute(origin),
-                rotation,
-                transmute(tint),
-            )
-        }
-    }
-
-    /// Draws a texture (or part of it) that stretches or shrinks nicely
-    #[inline]
-    pub fn draw_patch(
-        &self,
-        _raylib: &mut Raylib,
-        patch_info: NPatchInfo,
-        dest: Rectangle,
-        origin: Vector2,
-        rotation: f32,
-        tint: Color,
-    ) {
-        unsafe {
-            ffi::DrawTextureNPatch(
-                self.raw.deref().clone(),
-                transmute(patch_info),
-                transmute(dest),
-                transmute(origin),
-                rotation,
-                transmute(tint),
-            )
-        }
-    }
 }
 
 impl Drop for Texture {
@@ -1170,6 +919,7 @@ impl Drop for Texture {
     }
 }
 
+/// RenderTexture, fbo for texture rendering
 #[derive(Clone, Debug)]
 pub struct RenderTexture {
     pub(crate) raw: Rc<ffi::RenderTexture>,

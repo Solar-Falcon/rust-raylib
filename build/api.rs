@@ -170,7 +170,17 @@ impl Enum {
                 if s.len() > 1
                     && !(self.name == "PixelFormat" && s.contains(|c: char| c.is_ascii_digit()))
                 {
-                    s[1..].make_ascii_lowercase();
+                    let mut i = 1;
+                    let mut j = s.len();
+
+                    if s.starts_with("IVEC") {
+                        i += 1;
+                    }
+                    if s.ends_with("2D") {
+                        j -= 1;
+                    }
+
+                    s[i..j].make_ascii_lowercase();
                 }
 
                 s
