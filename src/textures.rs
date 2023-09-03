@@ -4,7 +4,7 @@ use crate::{
     text::Font,
 };
 
-use std::{ffi::CString, mem::transmute, ops::Deref, sync::Arc};
+use std::{ffi::CString, mem::transmute, ops::Deref, rc::Rc};
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
@@ -937,7 +937,7 @@ impl Drop for Image {
 
 #[derive(Clone, Debug)]
 pub struct Texture {
-    pub(crate) raw: Arc<ffi::Texture>,
+    pub(crate) raw: Rc<ffi::Texture>,
 }
 
 impl Texture {
@@ -971,7 +971,7 @@ impl Texture {
         let filename = CString::new(filename).unwrap();
 
         Self {
-            raw: Arc::new(unsafe { ffi::LoadTexture(filename.as_ptr()) }),
+            raw: Rc::new(unsafe { ffi::LoadTexture(filename.as_ptr()) }),
         }
     }
 
@@ -979,7 +979,7 @@ impl Texture {
     #[inline]
     pub fn from_image(image: &Image) -> Self {
         Self {
-            raw: Arc::new(unsafe { ffi::LoadTextureFromImage(image.raw.clone()) }),
+            raw: Rc::new(unsafe { ffi::LoadTextureFromImage(image.raw.clone()) }),
         }
     }
 
@@ -987,7 +987,7 @@ impl Texture {
     #[inline]
     pub fn from_cubemap(image: &Image, layout: CubemapLayout) -> TextureCubemap {
         Self {
-            raw: Arc::new(unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) }),
+            raw: Rc::new(unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) }),
         }
     }
 
@@ -1045,7 +1045,7 @@ impl Texture {
     /// Generate GPU mipmaps for a texture
     #[inline]
     pub fn generate_mipmaps(&mut self) -> bool {
-        if let Some(texture) = Arc::get_mut(&mut self.raw) {
+        if let Some(texture) = Rc::get_mut(&mut self.raw) {
             unsafe {
                 ffi::GenTextureMipmaps(texture as *mut _);
             }
@@ -1164,15 +1164,15 @@ impl Texture {
 impl Drop for Texture {
     #[inline]
     fn drop(&mut self) {
-        if Arc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadTexture(self.raw.deref().clone()) }
+        if let Some(raw) = Rc::get_mut(&mut self.raw) {
+            unsafe { ffi::UnloadTexture(raw.clone()) }
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct RenderTexture {
-    pub(crate) raw: Arc<ffi::RenderTexture>,
+    pub(crate) raw: Rc<ffi::RenderTexture>,
 }
 
 impl RenderTexture {
@@ -1192,7 +1192,7 @@ impl RenderTexture {
     #[inline]
     pub fn new(width: u32, height: u32) -> Self {
         Self {
-            raw: Arc::new(unsafe { ffi::LoadRenderTexture(width as _, height as _) }),
+            raw: Rc::new(unsafe { ffi::LoadRenderTexture(width as _, height as _) }),
         }
     }
 
@@ -1206,8 +1206,8 @@ impl RenderTexture {
 impl Drop for RenderTexture {
     #[inline]
     fn drop(&mut self) {
-        if Arc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadRenderTexture(self.raw.deref().clone()) }
+        if let Some(raw) = Rc::get_mut(&mut self.raw) {
+            unsafe { ffi::UnloadRenderTexture(raw.clone()) }
         }
     }
 }
