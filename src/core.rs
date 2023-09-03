@@ -1,8 +1,8 @@
 use crate::{color::Color, ffi, math::Vector2, texture::Image};
 
-use std::ffi::{CStr, CString};
+use std::{ffi::{CStr, CString}, time::Duration};
 
-// TODO: move Texture::draw_* funcs to Draw trait in drawing.rs
+// TODO: include SetWindowFlags into smth like init_window_ex(..., ConfigFlags)
 
 pub use ffi::{
     ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
@@ -23,6 +23,16 @@ impl Raylib {
         }
 
         Self(())
+    }
+
+    /// Initialize window and OpenGL context with config flags
+    #[inline]
+    pub fn init_window_ex(width: u32, height: u32, title: &str, flags: ConfigFlags) -> Self {
+        unsafe {
+            ffi::SetConfigFlags(flags.bits());
+        }
+
+        Self::init_window(width, height, title)
     }
 
     /// Check if Escape key or Close icon is pressed
@@ -373,383 +383,361 @@ impl Raylib {
     pub fn clear_background(&mut self, color: Color) {
         unsafe { ffi::ClearBackground(color.into()) }
     }
-    /*
-        /// Set target FPS (maximum)
-        #[inline]
-        pub fn SetTargetFPS(fps: u32) {}
-
-        /// Get current FPS
-        #[inline]
-        pub fn GetFPS() -> u32;
-
-        /// Get time in seconds for last frame drawn (delta time)
-        #[inline]
-        pub fn GetFrameTime() -> f32;
-
-        /// Get elapsed time in seconds since InitWindow()
-        #[inline]
-        pub fn GetTime() -> core::ffi::c_double;
-
-        /// Get a random value between min and max (both included)
-        #[inline]
-        pub fn GetRandomValue(min: u32, max: u32) -> u32;
-
-        /// Set the seed for the random number generator
-        #[inline]
-        pub fn SetRandomSeed(seed: core::ffi::c_uint) {}
-
-        /// Takes a screenshot of current screen (filename extension defines format)
-        #[inline]
-        pub fn TakeScreenshot(fileName: *const core::ffi::c_char) {}
-
-        /// Setup init configuration flags (view FLAGS)
-        #[inline]
-        pub fn SetConfigFlags(flags: core::ffi::c_uint) {}
-
-        /// Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...)
-        #[inline]
-        pub fn TraceLog(logLevel: u32, text: *const core::ffi::c_char, ...) {}
-
-        /// Set the current threshold (minimum) log level
-        #[inline]
-        pub fn SetTraceLogLevel(logLevel: u32) {}
-
-        /// Internal memory allocator
-        #[inline]
-        pub fn MemAlloc(size: core::ffi::c_uint) -> *mut core::ffi::c_void;
-
-        /// Internal memory reallocator
-        #[inline]
-        pub fn MemRealloc(ptr: *mut core::ffi::c_void, size: core::ffi::c_uint) -> *mut core::ffi::c_void;
-
-        /// Internal memory free
-        #[inline]
-        pub fn MemFree(ptr: *mut core::ffi::c_void) {}
-
-        /// Open URL with default system browser (if available)
-        #[inline]
-        pub fn OpenURL(url: *const core::ffi::c_char) {}
-
-        /// Set custom trace log
-        #[inline]
-        pub fn SetTraceLogCallback(callback: TraceLogCallback) {}
-
-        /// Set custom file binary data loader
-        #[inline]
-        pub fn SetLoadFileDataCallback(callback: LoadFileDataCallback) {}
-
-        /// Set custom file binary data saver
-        #[inline]
-        pub fn SetSaveFileDataCallback(callback: SaveFileDataCallback) {}
-
-        /// Set custom file text data loader
-        #[inline]
-        pub fn SetLoadFileTextCallback(callback: LoadFileTextCallback) {}
-
-        /// Set custom file text data saver
-        #[inline]
-        pub fn SetSaveFileTextCallback(callback: SaveFileTextCallback) {}
-
-        /// Load file data as byte array (read)
-        #[inline]
-        pub fn LoadFileData(fileName: *const core::ffi::c_char, bytesRead: *mut core::ffi::c_uint) -> *mut core::ffi::c_uchar;
-
-        /// Unload file data allocated by LoadFileData()
-        #[inline]
-        pub fn UnloadFileData(data: *mut core::ffi::c_uchar) {}
-
-        /// Save data to file from byte array (write), returns true on success
-        #[inline]
-        pub fn SaveFileData(fileName: *const core::ffi::c_char, data: *mut core::ffi::c_void, bytesToWrite: core::ffi::c_uint) -> bool;
-
-        /// Export data to code (.h), returns true on success
-        #[inline]
-        pub fn ExportDataAsCode(data: *const core::ffi::c_uchar, size: core::ffi::c_uint, fileName: *const core::ffi::c_char) -> bool;
-
-        /// Load text data from file (read), returns a '\0' terminated string
-        #[inline]
-        pub fn LoadFileText(fileName: *const core::ffi::c_char) -> *mut core::ffi::c_char;
-
-        /// Unload file text data allocated by LoadFileText()
-        #[inline]
-        pub fn UnloadFileText(text: *mut core::ffi::c_char) {}
-
-        /// Save text data to file (write), string must be '\0' terminated, returns true on success
-        #[inline]
-        pub fn SaveFileText(fileName: *const core::ffi::c_char, text: *mut core::ffi::c_char) -> bool;
 
-        /// Check if file exists
-        #[inline]
-        pub fn FileExists(fileName: *const core::ffi::c_char) -> bool;
-
-        /// Check if a directory path exists
-        #[inline]
-        pub fn DirectoryExists(dirPath: *const core::ffi::c_char) -> bool;
-
-        /// Check file extension (including point: .png, .wav)
-        #[inline]
-        pub fn IsFileExtension(fileName: *const core::ffi::c_char, ext: *const core::ffi::c_char) -> bool;
-
-        /// Get file length in bytes (NOTE: GetFileSize() conflicts with windows.h)
-        #[inline]
-        pub fn GetFileLength(fileName: *const core::ffi::c_char) -> u32;
-
-        /// Get pointer to extension for a filename string (includes dot: '.png')
-        #[inline]
-        pub fn GetFileExtension(fileName: *const core::ffi::c_char) -> *const core::ffi::c_char;
-
-        /// Get pointer to filename for a path string
-        #[inline]
-        pub fn GetFileName(filePath: *const core::ffi::c_char) -> *const core::ffi::c_char;
-
-        /// Get filename string without extension (uses static string)
-        #[inline]
-        pub fn GetFileNameWithoutExt(filePath: *const core::ffi::c_char) -> *const core::ffi::c_char;
-
-        /// Get full path for a given fileName with path (uses static string)
-        #[inline]
-        pub fn GetDirectoryPath(filePath: *const core::ffi::c_char) -> *const core::ffi::c_char;
-
-        /// Get previous directory path for a given path (uses static string)
-        #[inline]
-        pub fn GetPrevDirectoryPath(dirPath: *const core::ffi::c_char) -> *const core::ffi::c_char;
-
-        /// Get current working directory (uses static string)
-        #[inline]
-        pub fn GetWorkingDirectory() -> *const core::ffi::c_char;
-
-        /// Get the directory if the running application (uses static string)
-        #[inline]
-        pub fn GetApplicationDirectory() -> *const core::ffi::c_char;
-
-        /// Change working directory, return true on success
-        #[inline]
-        pub fn ChangeDirectory(dir: *const core::ffi::c_char) -> bool;
-
-        /// Check if a given path is a file or a directory
-        #[inline]
-        pub fn IsPathFile(path: *const core::ffi::c_char) -> bool;
-
-        /// Load directory filepaths
-        #[inline]
-        pub fn LoadDirectoryFiles(dirPath: *const core::ffi::c_char) -> FilePathList;
-
-        /// Load directory filepaths with extension filtering and recursive directory scan
-        #[inline]
-        pub fn LoadDirectoryFilesEx(basePath: *const core::ffi::c_char, filter: *const core::ffi::c_char, scanSubdirs: bool) -> FilePathList;
-
-        /// Unload filepaths
-        #[inline]
-        pub fn UnloadDirectoryFiles(files: FilePathList) {}
-
-        /// Check if a file has been dropped into window
-        #[inline]
-        pub fn IsFileDropped() -> bool;
-
-        /// Load dropped filepaths
-        #[inline]
-        pub fn LoadDroppedFiles() -> FilePathList;
-
-        /// Unload dropped filepaths
-        #[inline]
-        pub fn UnloadDroppedFiles(files: FilePathList) {}
-
-        /// Get file modification time (last write time)
-        #[inline]
-        pub fn GetFileModTime(fileName: *const core::ffi::c_char) -> core::ffi::c_long;
-
-        /// Compress data (DEFLATE algorithm), memory must be MemFree()
-        #[inline]
-        pub fn CompressData(data: *const core::ffi::c_uchar, dataSize: u32, compDataSize: *mut u32) -> *mut core::ffi::c_uchar;
-
-        /// Decompress data (DEFLATE algorithm), memory must be MemFree()
-        #[inline]
-        pub fn DecompressData(compData: *const core::ffi::c_uchar, compDataSize: u32, dataSize: *mut u32) -> *mut core::ffi::c_uchar;
-
-        /// Encode data to Base64 string, memory must be MemFree()
-        #[inline]
-        pub fn EncodeDataBase64(data: *const core::ffi::c_uchar, dataSize: u32, outputSize: *mut u32) -> *mut core::ffi::c_char;
-
-        /// Decode Base64 string data, memory must be MemFree()
-        #[inline]
-        pub fn DecodeDataBase64(data: *const core::ffi::c_uchar, outputSize: *mut u32) -> *mut core::ffi::c_uchar;
-
-        /// Check if a key has been pressed once
-        #[inline]
-        pub fn IsKeyPressed(key: u32) -> bool;
-
-        /// Check if a key is being pressed
-        #[inline]
-        pub fn IsKeyDown(key: u32) -> bool;
-
-        /// Check if a key has been released once
-        #[inline]
-        pub fn IsKeyReleased(key: u32) -> bool;
-
-        /// Check if a key is NOT being pressed
-        #[inline]
-        pub fn IsKeyUp(key: u32) -> bool;
-
-        /// Set a custom key to exit program (default is ESC)
-        #[inline]
-        pub fn SetExitKey(key: u32) {}
-
-        /// Get key pressed (keycode), call it multiple times for keys queued, returns 0 when the queue is empty
-        #[inline]
-        pub fn GetKeyPressed() -> u32;
-
-        /// Get char pressed (unicode), call it multiple times for chars queued, returns 0 when the queue is empty
-        #[inline]
-        pub fn GetCharPressed() -> u32;
-
-        /// Check if a gamepad is available
-        #[inline]
-        pub fn IsGamepadAvailable(gamepad: u32) -> bool;
-
-        /// Get gamepad internal name id
-        #[inline]
-        pub fn GetGamepadName(gamepad: u32) -> *const core::ffi::c_char;
-
-        /// Check if a gamepad button has been pressed once
-        #[inline]
-        pub fn IsGamepadButtonPressed(gamepad: u32, button: u32) -> bool;
-
-        /// Check if a gamepad button is being pressed
-        #[inline]
-        pub fn IsGamepadButtonDown(gamepad: u32, button: u32) -> bool;
-
-        /// Check if a gamepad button has been released once
-        #[inline]
-        pub fn IsGamepadButtonReleased(gamepad: u32, button: u32) -> bool;
-
-        /// Check if a gamepad button is NOT being pressed
-        #[inline]
-        pub fn IsGamepadButtonUp(gamepad: u32, button: u32) -> bool;
-
-        /// Get the last gamepad button pressed
-        #[inline]
-        pub fn GetGamepadButtonPressed() -> u32;
-
-        /// Get gamepad axis count for a gamepad
-        #[inline]
-        pub fn GetGamepadAxisCount(gamepad: u32) -> u32;
-
-        /// Get axis movement value for a gamepad axis
-        #[inline]
-        pub fn GetGamepadAxisMovement(gamepad: u32, axis: u32) -> f32;
-
-        /// Set internal gamepad mappings (SDL_GameControllerDB)
-        #[inline]
-        pub fn SetGamepadMappings(mappings: *const core::ffi::c_char) -> u32;
-
-        /// Check if a mouse button has been pressed once
-        #[inline]
-        pub fn IsMouseButtonPressed(button: u32) -> bool;
-
-        /// Check if a mouse button is being pressed
-        #[inline]
-        pub fn IsMouseButtonDown(button: u32) -> bool;
-
-        /// Check if a mouse button has been released once
-        #[inline]
-        pub fn IsMouseButtonReleased(button: u32) -> bool;
-
-        /// Check if a mouse button is NOT being pressed
-        #[inline]
-        pub fn IsMouseButtonUp(button: u32) -> bool;
-
-        /// Get mouse position X
-        #[inline]
-        pub fn GetMouseX() -> u32;
-
-        /// Get mouse position Y
-        #[inline]
-        pub fn GetMouseY() -> u32;
-
-        /// Get mouse position XY
-        #[inline]
-        pub fn GetMousePosition() -> Vector2;
-
-        /// Get mouse delta between frames
-        #[inline]
-        pub fn GetMouseDelta() -> Vector2;
-
-        /// Set mouse position XY
-        #[inline]
-        pub fn SetMousePosition(x: u32, y: u32) {}
-
-        /// Set mouse offset
-        #[inline]
-        pub fn SetMouseOffset(offsetX: u32, offsetY: u32) {}
-
-        /// Set mouse scaling
-        #[inline]
-        pub fn SetMouseScale(scaleX: f32, scaleY: f32) {}
-
-        /// Get mouse wheel movement for X or Y, whichever is larger
-        #[inline]
-        pub fn GetMouseWheelMove() -> f32;
-
-        /// Get mouse wheel movement for both X and Y
-        #[inline]
-        pub fn GetMouseWheelMoveV() -> Vector2;
-
-        /// Set mouse cursor
-        #[inline]
-        pub fn SetMouseCursor(cursor: u32) {}
-
-        /// Get touch position X for touch point 0 (relative to screen size)
-        #[inline]
-        pub fn GetTouchX() -> u32;
-
-        /// Get touch position Y for touch point 0 (relative to screen size)
-        #[inline]
-        pub fn GetTouchY() -> u32;
-
-        /// Get touch position XY for a touch point index (relative to screen size)
-        #[inline]
-        pub fn GetTouchPosition(index: u32) -> Vector2;
-
-        /// Get touch point identifier for given index
-        #[inline]
-        pub fn GetTouchPointId(index: u32) -> u32;
-
-        /// Get number of touch points
-        #[inline]
-        pub fn GetTouchPointCount() -> u32;
-
-        /// Enable a set of gestures using flags
-        #[inline]
-        pub fn SetGesturesEnabled(flags: core::ffi::c_uint) {}
-
-        /// Check if a gesture have been detected
-        #[inline]
-        pub fn IsGestureDetected(gesture: u32) -> bool;
-
-        /// Get latest detected gesture
-        #[inline]
-        pub fn GetGestureDetected() -> u32;
-
-        /// Get gesture hold time in milliseconds
-        #[inline]
-        pub fn GetGestureHoldDuration() -> f32;
-
-        /// Get gesture drag vector
-        #[inline]
-        pub fn GetGestureDragVector() -> Vector2;
-
-        /// Get gesture drag angle
-        #[inline]
-        pub fn GetGestureDragAngle() -> f32;
-
-        /// Get gesture pinch delta
-        #[inline]
-        pub fn GetGesturePinchVector() -> Vector2;
-
-        /// Get gesture pinch angle
-        #[inline]
-        pub fn GetGesturePinchAngle() -> f32;
-    // */
+    /// Set target FPS (maximum)
+    #[inline]
+    pub fn set_target_fps(&mut self, fps: u32) {
+        unsafe { ffi::SetTargetFPS(fps as _) }
+    }
+
+    /// Get current FPS
+    #[inline]
+    pub fn get_fps(&self) -> u32 {
+        unsafe { ffi::GetFPS() as _ }
+    }
+
+    /// Get time for last frame drawn (delta time)
+    #[inline]
+    pub fn get_frame_time(&self) -> Duration {
+        Duration::from_secs_f32(unsafe { ffi::GetFrameTime() })
+    }
+
+    /// Get elapsed time since InitWindow()
+    #[inline]
+    pub fn get_time(&self) -> Duration {
+        Duration::from_secs_f64(unsafe { ffi::GetTime() })
+    }
+
+    /// Get a random value between min and max (both included)
+    #[inline]
+    pub fn get_random_value(&self, min: i32, max: i32) -> i32 {
+        unsafe { ffi::GetRandomValue(min, max) }
+    }
+
+    /// Set the seed for the random number generator
+    #[inline]
+    pub fn set_random_seed(&mut self, seed: u32) {
+        unsafe { ffi::SetRandomSeed(seed) }
+    }
+
+    /// Takes a screenshot of current screen (filename extension defines format)
+    #[inline]
+    pub fn take_screenshot(&mut self, filename: &str) {
+        let filename = CString::new(filename).unwrap();
+
+        unsafe { ffi::TakeScreenshot(filename.as_ptr()) }
+    }
+
+    /// Open URL with default system browser (if available)
+    #[inline]
+    pub fn open_url(&self, url: &str) {
+        let url = CString::new(url).unwrap();
+
+        unsafe { ffi::OpenURL(url.as_ptr()) }
+    }
+
+    /// Check if a file has been dropped into window
+    #[inline]
+    pub fn is_file_dropped(&self) -> bool {
+        unsafe { ffi::IsFileDropped() }
+    }
+
+    /// Load dropped filepaths
+    #[inline]
+    pub fn get_dropped_files(&self) -> Vec<String> {
+        let path_list = unsafe { ffi::LoadDroppedFiles() };
+        let mut paths = Vec::new();
+
+        for i in 0..(path_list.count as usize) {
+            let path = unsafe { CStr::from_ptr(path_list.paths.add(i).read()) };
+
+            paths.push(path.to_string_lossy().into_owned());
+        }
+
+        unsafe { ffi::UnloadDroppedFiles(path_list); }
+
+        paths
+    }
+
+    /// Check if a key has been pressed once
+    #[inline]
+    pub fn is_key_pressed(&self, key: KeyboardKey) -> bool {
+        unsafe { ffi::IsKeyPressed(key as _) }
+    }
+
+    /// Check if a key is being pressed
+    #[inline]
+    pub fn is_key_down(&self, key: KeyboardKey) -> bool {
+        unsafe { ffi::IsKeyDown(key as _) }
+    }
+
+    /// Check if a key has been released once
+    #[inline]
+    pub fn is_key_released(&self, key: KeyboardKey) -> bool {
+        unsafe { ffi::IsKeyReleased(key as _) }
+    }
+
+    /// Check if a key is NOT being pressed
+    #[inline]
+    pub fn is_key_up(&self, key: KeyboardKey) -> bool {
+        unsafe { ffi::IsKeyUp(key as _) }
+    }
+
+    /// Set a custom key to exit program (default is ESC)
+    #[inline]
+    pub fn set_exit_key(&mut self, key: KeyboardKey) {
+        unsafe { ffi::SetExitKey(key as _) }
+    }
+
+    /// Get key pressed (keycode), call it multiple times for keys queued, returns [`KeyboardKey::Null`] when the queue is empty
+    #[inline]
+    pub fn get_key_pressed(&self) -> KeyboardKey {
+        unsafe { std::mem::transmute(ffi::GetKeyPressed()) }
+    }
+
+    /// Get char pressed (unicode), call it multiple times for chars queued, returns `None` when the queue is empty
+    #[inline]
+    pub fn get_char_pressed(&self) -> Option<char> {
+        let ch = unsafe { ffi::GetCharPressed() as u32 };
+
+        if ch != 0 {
+            char::from_u32(ch)
+        } else {
+            None
+        }
+    }
+
+    /// Check if a gamepad is available
+    #[inline]
+    pub fn is_gamepad_available(&self, gamepad: u32) -> bool {
+        unsafe { ffi::IsGamepadAvailable(gamepad as _) }
+    }
+
+    /// Get gamepad internal name id
+    #[inline]
+    pub fn get_gamepad_name(&self, gamepad: u32) -> String {
+        let name = unsafe { ffi::GetGamepadName(gamepad as _) };
+
+        if name != std::ptr::null() {
+            let name = unsafe { CStr::from_ptr(name) };
+
+            name.to_string_lossy().into_owned()
+        } else {
+            String::new()
+        }
+    }
+
+    /// Check if a gamepad button has been pressed once
+    #[inline]
+    pub fn is_gamepad_button_pressed(&self, gamepad: u32, button: GamepadButton) -> bool {
+        unsafe { ffi::IsGamepadButtonPressed(gamepad as _, button as _) }
+    }
+
+    /// Check if a gamepad button is being pressed
+    #[inline]
+    pub fn is_gamepad_button_down(&self, gamepad: u32, button: GamepadButton) -> bool {
+        unsafe { ffi::IsGamepadButtonDown(gamepad as _, button as _) }
+    }
+
+    /// Check if a gamepad button has been released once
+    #[inline]
+    pub fn is_gamepad_button_released(&self, gamepad: u32, button: GamepadButton) -> bool {
+        unsafe { ffi::IsGamepadButtonReleased(gamepad as _, button as _) }
+    }
+
+    /// Check if a gamepad button is NOT being pressed
+    #[inline]
+    pub fn is_gamepad_button_up(&self, gamepad: u32, button: GamepadButton) -> bool {
+        unsafe { ffi::IsGamepadButtonUp(gamepad as _, button as _) }
+    }
+
+    /// Get the last gamepad button pressed
+    #[inline]
+    pub fn get_gamepad_button_pressed(&self) -> GamepadButton {
+        unsafe { std::mem::transmute(ffi::GetGamepadButtonPressed()) }
+    }
+
+    /// Get gamepad axis count for a gamepad
+    #[inline]
+    pub fn get_gamepad_axis_count(&self, gamepad: u32) -> u32 {
+        unsafe { ffi::GetGamepadAxisCount(gamepad as _) as _ }
+    }
+
+    /// Get axis movement value for a gamepad axis
+    #[inline]
+    pub fn get_gamepad_axis_movement(&self, gamepad: u32, axis: GamepadAxis) -> f32 {
+        unsafe { ffi::GetGamepadAxisMovement(gamepad as _, axis as _) }
+    }
+
+    /// Set internal gamepad mappings (SDL_GameControllerDB)
+    #[inline]
+    pub fn set_gamepad_mappings(&mut self, mappings: &str) -> i32 {
+        let mappings = CString::new(mappings).unwrap();
+
+        unsafe { ffi::SetGamepadMappings(mappings.as_ptr()) }
+    }
+
+    /// Check if a mouse button has been pressed once
+    #[inline]
+    pub fn is_mouse_button_pressed(&self, button: MouseButton) -> bool {
+        unsafe { ffi::IsMouseButtonPressed(button as _) }
+    }
+
+    /// Check if a mouse button is being pressed
+    #[inline]
+    pub fn is_mouse_button_down(&self, button: MouseButton) -> bool {
+        unsafe { ffi::IsMouseButtonDown(button as _) }
+    }
+
+    /// Check if a mouse button has been released once
+    #[inline]
+    pub fn is_mouse_button_released(&self, button: MouseButton) -> bool {
+        unsafe { ffi::IsMouseButtonReleased(button as _) }
+    }
+
+    /// Check if a mouse button is NOT being pressed
+    #[inline]
+    pub fn is_mouse_button_up(&self, button: MouseButton) -> bool {
+        unsafe { ffi::IsMouseButtonUp(button as _) }
+    }
+
+    /// Get mouse position X
+    #[inline]
+    pub fn get_mouse_x(&self) -> i32 {
+        unsafe { ffi::GetMouseX() }
+    }
+
+    /// Get mouse position Y
+    #[inline]
+    pub fn get_mouse_y(&self) -> i32 {
+        unsafe { ffi::GetMouseY() }
+    }
+
+    /// Get mouse position XY
+    #[inline]
+    pub fn get_mouse_position(&self) -> Vector2 {
+        unsafe { ffi::GetMousePosition().into() }
+    }
+
+    /// Get mouse delta between frames
+    #[inline]
+    pub fn get_mouse_delta(&self) -> Vector2 {
+        unsafe { ffi::GetMouseDelta().into() }
+    }
+
+    /// Set mouse position XY
+    #[inline]
+    pub fn set_mouse_position(&mut self, x: i32, y: i32) {
+        unsafe { ffi::SetMousePosition(x, y) }
+    }
+
+    /// Set mouse offset
+    #[inline]
+    pub fn set_mouse_offset(&mut self, offset_x: i32, offset_y: i32) {
+        unsafe { ffi::SetMouseOffset(offset_x, offset_y) }
+    }
+
+    /// Set mouse scaling
+    #[inline]
+    pub fn set_mouse_scale(&mut self, scale_x: f32, scale_y: f32) {
+        unsafe { ffi::SetMouseScale(scale_x, scale_y) }
+    }
+
+    /// Get mouse wheel movement for X or Y, whichever is larger
+    #[inline]
+    pub fn get_mouse_wheel_move(&self) -> f32 {
+        unsafe { ffi::GetMouseWheelMove() }
+    }
+
+    /// Get mouse wheel movement for both X and Y
+    #[inline]
+    pub fn get_mouse_wheel_move_vec(&self) -> Vector2 {
+        unsafe { ffi::GetMouseWheelMoveV().into() }
+    }
+
+    /// Set mouse cursor
+    #[inline]
+    pub fn set_mouse_cursor(&mut self, cursor: MouseCursor) {
+        unsafe { ffi::SetMouseCursor(cursor as _) }
+    }
+
+    /// Get touch position X for touch point 0 (relative to screen size)
+    #[inline]
+    pub fn get_touch_x(&self) -> i32 {
+        unsafe { ffi::GetTouchX() }
+    }
+
+    /// Get touch position Y for touch point 0 (relative to screen size)
+    #[inline]
+    pub fn get_touch_y(&self) -> i32 {
+        unsafe { ffi::GetTouchY() }
+    }
+
+    /// Get touch position XY for a touch point index (relative to screen size)
+    #[inline]
+    pub fn get_touch_position(&self, index: u32) -> Vector2 {
+        unsafe { ffi::GetTouchPosition(index as _).into() }
+    }
+
+    /// Get touch point identifier for given index
+    #[inline]
+    pub fn get_touch_point_id(&self, index: u32) -> u32 {
+        unsafe { ffi::GetTouchPointId(index as _) as _ }
+    }
+
+    /// Get number of touch points
+    #[inline]
+    pub fn get_touch_point_count(&self) -> u32 {
+        unsafe { ffi::GetTouchPointCount() as _ }
+    }
+
+    /// Enable a set of gestures using flags
+    #[inline]
+    pub fn set_gestures_enabled(&mut self, flags: Gesture) {
+        unsafe { ffi::SetGesturesEnabled(flags.bits()) }
+    }
+
+    /// Check if a gesture have been detected
+    #[inline]
+    pub fn is_gesture_detected(&self, gesture: Gesture) -> bool {
+        unsafe { ffi::IsGestureDetected(gesture.bits() as _) }
+    }
+
+    /// Get latest detected gesture
+    #[inline]
+    pub fn get_gesture_detected(&self) -> Gesture {
+        unsafe { Gesture(ffi::GetGestureDetected() as _) }
+    }
+
+    /// Get gesture hold time
+    #[inline]
+    pub fn get_gesture_hold_duration(&self) -> Duration {
+        Duration::from_micros(unsafe { ffi::GetGestureHoldDuration() * 1000. } as u64)
+    }
+
+    /// Get gesture drag vector
+    #[inline]
+    pub fn get_gesture_drag_vector(&self) -> Vector2 {
+        unsafe { ffi::GetGestureDragVector().into() }
+    }
+
+    /// Get gesture drag angle
+    #[inline]
+    pub fn get_gesture_drag_angle(&self) -> f32 {
+        unsafe { ffi::GetGestureDragAngle() }
+    }
+
+    /// Get gesture pinch delta
+    #[inline]
+    pub fn get_gesture_pinch_vector(&self) -> Vector2 {
+        unsafe { ffi::GetGesturePinchVector().into() }
+    }
+
+    /// Get gesture pinch angle
+    #[inline]
+    pub fn get_gesture_pinch_angle(&self) -> f32 {
+        unsafe { ffi::GetGesturePinchAngle() }
+    }
 }
 
 impl Drop for Raylib {

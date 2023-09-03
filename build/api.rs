@@ -224,7 +224,7 @@ impl Enum {
     }
 
     fn generate_bitflags(&self, code: &mut String) {
-        code.push_str(&format!("pub struct {}(u32);\n\n", self.name));
+        code.push_str(&format!("pub struct {}(pub(crate) u32);\n\n", self.name));
         code.push_str(&format!(
             "bitflags::bitflags! {{\n\timpl {}: u32 {{\n",
             self.name
