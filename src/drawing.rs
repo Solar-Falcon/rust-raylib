@@ -1,12 +1,15 @@
 use crate::{
+    color::Color,
     ffi,
-    math::{Camera2D, Camera3D, Vector2, Rectangle},
+    math::{Camera2D, Camera3D, Rectangle, Vector2},
     shader::Shader,
-    texture::{RenderTexture2D, Texture, NPatchInfo},
-    vr::VrStereoConfig, Raylib, color::Color,
+    text::Font,
+    texture::{NPatchInfo, RenderTexture2D, Texture},
+    vr::VrStereoConfig,
+    Raylib,
 };
 
-use std::ops::Deref;
+use std::{ffi::CString, ops::Deref};
 
 pub use crate::ffi::BlendMode;
 
@@ -217,11 +220,16 @@ impl<'a, T> Drop for DrawVrStereoMode<'a, T> {
     }
 }
 
-pub trait Draw where Self: Sized {
+pub trait Draw
+where
+    Self: Sized,
+{
     /// Begin 2D mode with custom camera (2D)
     #[inline]
     fn begin_mode_2d(&mut self, camera: Camera2D) -> DrawMode2D<Self> {
-        unsafe { ffi::BeginMode2D(camera.clone().into()); }
+        unsafe {
+            ffi::BeginMode2D(camera.clone().into());
+        }
 
         DrawMode2D(self, camera)
     }
@@ -229,7 +237,9 @@ pub trait Draw where Self: Sized {
     /// Begin 3D mode with custom camera (3D)
     #[inline]
     fn begin_mode_3d(&mut self, camera: Camera3D) -> DrawMode3D<Self> {
-        unsafe { ffi::BeginMode3D(camera.clone().into()); }
+        unsafe {
+            ffi::BeginMode3D(camera.clone().into());
+        }
 
         DrawMode3D(self, camera)
     }
@@ -237,7 +247,9 @@ pub trait Draw where Self: Sized {
     /// Begin drawing to render texture
     #[inline]
     fn begin_texture_mode(&mut self, target: RenderTexture2D) -> DrawTextureMode<Self> {
-        unsafe { ffi::BeginTextureMode(target.raw.deref().clone()); }
+        unsafe {
+            ffi::BeginTextureMode(target.raw.deref().clone());
+        }
 
         DrawTextureMode(self, target)
     }
@@ -245,7 +257,9 @@ pub trait Draw where Self: Sized {
     /// Begin custom shader drawing
     #[inline]
     fn begin_shader_mode(&mut self, shader: Shader) -> DrawShaderMode<Self> {
-        unsafe { ffi::BeginShaderMode(shader.raw.deref().clone()); }
+        unsafe {
+            ffi::BeginShaderMode(shader.raw.deref().clone());
+        }
 
         DrawShaderMode(self, shader)
     }
@@ -253,23 +267,38 @@ pub trait Draw where Self: Sized {
     /// Begin blending mode (alpha, additive, multiplied, subtract, custom)
     #[inline]
     fn begin_blend_mode(&mut self, mode: BlendMode) -> DrawBlendMode<Self> {
-        unsafe { ffi::BeginBlendMode(mode as _); }
+        unsafe {
+            ffi::BeginBlendMode(mode as _);
+        }
 
         DrawBlendMode(self, mode)
     }
 
     /// Begin scissor mode (define screen area for following drawing)
     #[inline]
-    fn begin_scissor_mode(&mut self, x: u32, y: u32, width: u32, height: u32) -> DrawScissorMode<Self> {
-        unsafe { ffi::BeginScissorMode(x as _, y as _, width as _, height as _); }
+    fn begin_scissor_mode(
+        &mut self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    ) -> DrawScissorMode<Self> {
+        unsafe {
+            ffi::BeginScissorMode(x as _, y as _, width as _, height as _);
+        }
 
         DrawScissorMode(self, [x, y, width, height])
     }
 
     /// Begin stereo rendering (requires VR simulator)
     #[inline]
-    fn begin_vr_stereo_mode<'s, 'v: 's>(&'s mut self, config: &'v VrStereoConfig) -> DrawVrStereoMode<Self> {
-        unsafe { ffi::BeginVrStereoMode(config.clone().into()); }
+    fn begin_vr_stereo_mode<'s, 'v: 's>(
+        &'s mut self,
+        config: &'v VrStereoConfig,
+    ) -> DrawVrStereoMode<Self> {
+        unsafe {
+            ffi::BeginVrStereoMode(config.clone().into());
+        }
 
         DrawVrStereoMode(self, config)
     }
@@ -309,7 +338,7 @@ pub trait Draw where Self: Sized {
 
     /// Draw a part of a texture defined by a rectangle
     #[inline]
-    fn draw_texture_rect(&self, tex: &Texture, source: Rectangle, pos: Vector2, tint: Color) {
+    fn draw_texture_rect(&mut self, tex: &Texture, source: Rectangle, pos: Vector2, tint: Color) {
         // rectangle checks?
         unsafe {
             ffi::DrawTextureRec(
@@ -348,7 +377,7 @@ pub trait Draw where Self: Sized {
     /// Draws a texture (or part of it) that stretches or shrinks nicely
     #[inline]
     fn draw_texture_patch(
-        &self,
+        &mut self,
         tex: &Texture,
         patch_info: NPatchInfo,
         dest: Rectangle,
@@ -367,121 +396,560 @@ pub trait Draw where Self: Sized {
             )
         }
     }
-/*
+
     /// Set texture and rectangle to be used on shapes drawing
-	fn SetShapesTexture(texture: Texture2D, source: Rectangle);
+    #[inline]
+    fn set_shapes_texture(&mut self, texture: &Texture, source: Rectangle) {
+        unsafe { ffi::SetShapesTexture(texture.raw.deref().clone(), source.into()) }
+    }
 
-	/// Draw a pixel
-	fn DrawPixel(posX: core::ffi::c_int, posY: core::ffi::c_int, color: Color);
+    /// Draw a pixel
+    #[inline]
+    fn draw_pixel(&mut self, x: i32, y: i32, color: Color) {
+        unsafe { ffi::DrawPixel(x, y, color.into()) }
+    }
 
-	/// Draw a pixel (Vector version)
-	fn DrawPixelV(position: Vector2, color: Color);
+    /// Draw a pixel (Vector version)
+    #[inline]
+    fn draw_pixel_v(&mut self, position: Vector2, color: Color) {
+        unsafe { ffi::DrawPixelV(position.into(), color.into()) }
+    }
 
-	/// Draw a line
-	fn DrawLine(startPosX: core::ffi::c_int, startPosY: core::ffi::c_int, endPosX: core::ffi::c_int, endPosY: core::ffi::c_int, color: Color);
-	
+    /// Draw a line
+    #[inline]
+    fn draw_line(&mut self, start_x: i32, start_y: i32, end_x: i32, end_y: i32, color: Color) {
+        unsafe { ffi::DrawLine(start_x, start_y, end_x, end_y, color.into()) }
+    }
+
     /// Draw a line (Vector version)
-	fn DrawLineV(startPos: Vector2, endPos: Vector2, color: Color);
-	
+    #[inline]
+    fn draw_line_v(&mut self, start: Vector2, end: Vector2, color: Color) {
+        unsafe { ffi::DrawLineV(start.into(), end.into(), color.into()) }
+    }
+
     /// Draw a line defining thickness
-	fn DrawLineEx(startPos: Vector2, endPos: Vector2, thick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_line_ex(&mut self, start: Vector2, end: Vector2, thickness: f32, color: Color) {
+        unsafe { ffi::DrawLineEx(start.into(), end.into(), thickness, color.into()) }
+    }
+
     /// Draw a line using cubic-bezier curves in-out
-	fn DrawLineBezier(startPos: Vector2, endPos: Vector2, thick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_line_bezier(&mut self, start: Vector2, end: Vector2, thickness: f32, color: Color) {
+        unsafe { ffi::DrawLineBezier(start.into(), end.into(), thickness, color.into()) }
+    }
+
     /// Draw line using quadratic bezier curves with a control point
-	fn DrawLineBezierQuad(startPos: Vector2, endPos: Vector2, controlPos: Vector2, thick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_line_bezier_quad(
+        &mut self,
+        start: Vector2,
+        end: Vector2,
+        control_pos: Vector2,
+        thickness: f32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawLineBezierQuad(
+                start.into(),
+                end.into(),
+                control_pos.into(),
+                thickness,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw line using cubic bezier curves with 2 control points
-	fn DrawLineBezierCubic(startPos: Vector2, endPos: Vector2, startControlPos: Vector2, endControlPos: Vector2, thick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_line_bezier_cubic(
+        &mut self,
+        start: Vector2,
+        end: Vector2,
+        start_control_pos: Vector2,
+        end_control_pos: Vector2,
+        thickness: f32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawLineBezierCubic(
+                start.into(),
+                end.into(),
+                start_control_pos.into(),
+                end_control_pos.into(),
+                thickness,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw lines sequence
-	fn DrawLineStrip(points: *mut Vector2, pointCount: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_line_strip(&mut self, points: &[Vector2], color: Color) {
+        unsafe { ffi::DrawLineStrip(points.as_ptr() as *mut _, points.len() as _, color.into()) }
+    }
+
     /// Draw a color-filled circle
-	fn DrawCircle(centerX: core::ffi::c_int, centerY: core::ffi::c_int, radius: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_circle(&mut self, center_x: i32, center_y: i32, radius: f32, color: Color) {
+        unsafe { ffi::DrawCircle(center_x, center_y, radius, color.into()) }
+    }
+
     /// Draw a piece of a circle
-	fn DrawCircleSector(center: Vector2, radius: core::ffi::c_float, startAngle: core::ffi::c_float, endAngle: core::ffi::c_float, segments: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_circle_sector(
+        &mut self,
+        center: Vector2,
+        radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        segments: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCircleSector(
+                center.into(),
+                radius,
+                start_angle,
+                end_angle,
+                segments as _,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw circle sector outline
-	fn DrawCircleSectorLines(center: Vector2, radius: core::ffi::c_float, startAngle: core::ffi::c_float, endAngle: core::ffi::c_float, segments: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_circle_sector_lines(
+        &mut self,
+        center: Vector2,
+        radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        segments: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCircleSectorLines(
+                center.into(),
+                radius,
+                start_angle,
+                end_angle,
+                segments as _,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw a gradient-filled circle
-	fn DrawCircleGradient(centerX: core::ffi::c_int, centerY: core::ffi::c_int, radius: core::ffi::c_float, color1: Color, color2: Color);
-	
+    #[inline]
+    fn draw_circle_gradient(
+        &mut self,
+        center_x: i32,
+        center_y: i32,
+        radius: f32,
+        color1: Color,
+        color2: Color,
+    ) {
+        unsafe { ffi::DrawCircleGradient(center_x, center_y, radius, color1.into(), color2.into()) }
+    }
+
     /// Draw a color-filled circle (Vector version)
-	fn DrawCircleV(center: Vector2, radius: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_circle_v(&mut self, center: Vector2, radius: f32, color: Color) {
+        unsafe { ffi::DrawCircleV(center.into(), radius, color.into()) }
+    }
+
     /// Draw circle outline
-	fn DrawCircleLines(centerX: core::ffi::c_int, centerY: core::ffi::c_int, radius: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_circle_lines(&mut self, center_x: i32, center_y: i32, radius: f32, color: Color) {
+        unsafe { ffi::DrawCircleLines(center_x, center_y, radius, color.into()) }
+    }
+
     /// Draw ellipse
-	fn DrawEllipse(centerX: core::ffi::c_int, centerY: core::ffi::c_int, radiusH: core::ffi::c_float, radiusV: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_ellipse(
+        &mut self,
+        center_x: i32,
+        center_y: i32,
+        radius_h: f32,
+        radius_v: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawEllipse(center_x, center_y, radius_h, radius_v, color.into()) }
+    }
+
     /// Draw ellipse outline
-	fn DrawEllipseLines(centerX: core::ffi::c_int, centerY: core::ffi::c_int, radiusH: core::ffi::c_float, radiusV: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_ellipse_lines(
+        &mut self,
+        center_x: i32,
+        center_y: i32,
+        radius_h: f32,
+        radius_v: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawEllipseLines(center_x, center_y, radius_h, radius_v, color.into()) }
+    }
+
     /// Draw ring
-	fn DrawRing(center: Vector2, innerRadius: core::ffi::c_float, outerRadius: core::ffi::c_float, startAngle: core::ffi::c_float, endAngle: core::ffi::c_float, segments: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_ring(
+        &mut self,
+        center: Vector2,
+        inner_radius: f32,
+        outer_radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        segments: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawRing(
+                center.into(),
+                inner_radius,
+                outer_radius,
+                start_angle,
+                end_angle,
+                segments as _,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw ring outline
-	fn DrawRingLines(center: Vector2, innerRadius: core::ffi::c_float, outerRadius: core::ffi::c_float, startAngle: core::ffi::c_float, endAngle: core::ffi::c_float, segments: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_ring_lines(
+        &mut self,
+        center: Vector2,
+        inner_radius: f32,
+        outer_radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        segments: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawRingLines(
+                center.into(),
+                inner_radius,
+                outer_radius,
+                start_angle,
+                end_angle,
+                segments as _,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw a color-filled rectangle
-	fn DrawRectangle(posX: core::ffi::c_int, posY: core::ffi::c_int, width: core::ffi::c_int, height: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_rectangle(&mut self, x: i32, y: i32, width: u32, height: u32, color: Color) {
+        unsafe { ffi::DrawRectangle(x, y, width as _, height as _, color.into()) }
+    }
+
     /// Draw a color-filled rectangle (Vector version)
-	fn DrawRectangleV(position: Vector2, size: Vector2, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_v(&mut self, pos: Vector2, size: Vector2, color: Color) {
+        unsafe { ffi::DrawRectangleV(pos.into(), size.into(), color.into()) }
+    }
+
     /// Draw a color-filled rectangle
-	fn DrawRectangleRec(rec: Rectangle, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_rect(&mut self, rect: Rectangle, color: Color) {
+        unsafe { ffi::DrawRectangleRec(rect.into(), color.into()) }
+    }
+
     /// Draw a color-filled rectangle with pro parameters
-	fn DrawRectanglePro(rec: Rectangle, origin: Vector2, rotation: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_pro(
+        &mut self,
+        rect: Rectangle,
+        origin: Vector2,
+        rotation: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawRectanglePro(rect.into(), origin.into(), rotation, color.into()) }
+    }
+
     /// Draw a vertical-gradient-filled rectangle
-	fn DrawRectangleGradientV(posX: core::ffi::c_int, posY: core::ffi::c_int, width: core::ffi::c_int, height: core::ffi::c_int, color1: Color, color2: Color);
-	
+    #[inline]
+    fn draw_rectangle_gradient_vertical(
+        &mut self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        color1: Color,
+        color2: Color,
+    ) {
+        unsafe {
+            ffi::DrawRectangleGradientV(x, y, width as _, height as _, color1.into(), color2.into())
+        }
+    }
+
     /// Draw a horizontal-gradient-filled rectangle
-	fn DrawRectangleGradientH(posX: core::ffi::c_int, posY: core::ffi::c_int, width: core::ffi::c_int, height: core::ffi::c_int, color1: Color, color2: Color);
-	
+    #[inline]
+    fn draw_rectangle_gradient_horizontal(
+        &mut self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        color1: Color,
+        color2: Color,
+    ) {
+        unsafe {
+            ffi::DrawRectangleGradientH(x, y, width as _, height as _, color1.into(), color2.into())
+        }
+    }
+
     /// Draw a gradient-filled rectangle with custom vertex colors
-	fn DrawRectangleGradientEx(rec: Rectangle, col1: Color, col2: Color, col3: Color, col4: Color);
-	
+    #[inline]
+    fn draw_rectangle_gradient_ex(
+        &mut self,
+        rect: Rectangle,
+        col1: Color,
+        col2: Color,
+        col3: Color,
+        col4: Color,
+    ) {
+        unsafe {
+            ffi::DrawRectangleGradientEx(
+                rect.into(),
+                col1.into(),
+                col2.into(),
+                col3.into(),
+                col4.into(),
+            )
+        }
+    }
+
     /// Draw rectangle outline
-	fn DrawRectangleLines(posX: core::ffi::c_int, posY: core::ffi::c_int, width: core::ffi::c_int, height: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_lines(&mut self, x: i32, y: i32, width: u32, height: u32, color: Color) {
+        unsafe { ffi::DrawRectangleLines(x, y, width as _, height as _, color.into()) }
+    }
+
     /// Draw rectangle outline with extended parameters
-	fn DrawRectangleLinesEx(rec: Rectangle, lineThick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_lines_ex(&mut self, rect: Rectangle, line_thickness: f32, color: Color) {
+        unsafe { ffi::DrawRectangleLinesEx(rect.into(), line_thickness, color.into()) }
+    }
+
     /// Draw rectangle with rounded edges
-	fn DrawRectangleRounded(rec: Rectangle, roundness: core::ffi::c_float, segments: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_rounded(
+        &mut self,
+        rect: Rectangle,
+        roundness: f32,
+        segments: u32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawRectangleRounded(rect.into(), roundness, segments as _, color.into()) }
+    }
+
     /// Draw rectangle with rounded edges outline
-	fn DrawRectangleRoundedLines(rec: Rectangle, roundness: core::ffi::c_float, segments: core::ffi::c_int, lineThick: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_rectangle_rounded_lines(
+        &mut self,
+        rect: Rectangle,
+        roundness: f32,
+        segments: u32,
+        line_thickness: f32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawRectangleRoundedLines(
+                rect.into(),
+                roundness,
+                segments as _,
+                line_thickness,
+                color.into(),
+            )
+        }
+    }
+
     /// Draw a color-filled triangle (vertex in counter-clockwise order!)
-	fn DrawTriangle(v1: Vector2, v2: Vector2, v3: Vector2, color: Color);
-	
+    #[inline]
+    fn draw_triangle(&mut self, v1: Vector2, v2: Vector2, v3: Vector2, color: Color) {
+        unsafe { ffi::DrawTriangle(v1.into(), v2.into(), v3.into(), color.into()) }
+    }
+
     /// Draw triangle outline (vertex in counter-clockwise order!)
-	fn DrawTriangleLines(v1: Vector2, v2: Vector2, v3: Vector2, color: Color);
-	
+    #[inline]
+    fn draw_triangle_lines(&mut self, v1: Vector2, v2: Vector2, v3: Vector2, color: Color) {
+        unsafe { ffi::DrawTriangleLines(v1.into(), v2.into(), v3.into(), color.into()) }
+    }
+
     /// Draw a triangle fan defined by points (first vertex is the center)
-	fn DrawTriangleFan(points: *mut Vector2, pointCount: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_triangle_fan(&mut self, points: &[Vector2], color: Color) {
+        unsafe { ffi::DrawTriangleFan(points.as_ptr() as *mut _, points.len() as _, color.into()) }
+    }
+
     /// Draw a triangle strip defined by points
-	fn DrawTriangleStrip(points: *mut Vector2, pointCount: core::ffi::c_int, color: Color);
-	
+    #[inline]
+    fn draw_triangle_strip(&mut self, points: &[Vector2], color: Color) {
+        unsafe {
+            ffi::DrawTriangleStrip(points.as_ptr() as *mut _, points.len() as _, color.into())
+        }
+    }
+
     /// Draw a regular polygon (Vector version)
-	fn DrawPoly(center: Vector2, sides: core::ffi::c_int, radius: core::ffi::c_float, rotation: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_polygon(
+        &mut self,
+        center: Vector2,
+        sides: u32,
+        radius: f32,
+        rotation: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawPoly(center.into(), sides as _, radius, rotation, color.into()) }
+    }
+
     /// Draw a polygon outline of n sides
-	fn DrawPolyLines(center: Vector2, sides: core::ffi::c_int, radius: core::ffi::c_float, rotation: core::ffi::c_float, color: Color);
-	
+    #[inline]
+    fn draw_polygon_lines(
+        &mut self,
+        center: Vector2,
+        sides: u32,
+        radius: f32,
+        rotation: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawPolyLines(center.into(), sides as _, radius, rotation, color.into()) }
+    }
+
     /// Draw a polygon outline of n sides with extended parameters
-	fn DrawPolyLinesEx(center: Vector2, sides: core::ffi::c_int, radius: core::ffi::c_float, rotation: core::ffi::c_float, lineThick: core::ffi::c_float, color: Color);
-*/
+    #[inline]
+    fn draw_polygon_lines_ex(
+        &mut self,
+        center: Vector2,
+        sides: u32,
+        radius: f32,
+        rotation: f32,
+        line_thickness: f32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawPolyLinesEx(
+                center.into(),
+                sides as _,
+                radius,
+                rotation,
+                line_thickness,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw current FPS
+    #[inline]
+    fn draw_fps(&mut self, x: i32, y: i32) {
+        unsafe { ffi::DrawFPS(x, y) }
+    }
+
+    /// Draw text (using default font)
+    #[inline]
+    fn draw_text(&mut self, text: &str, x: i32, y: i32, font_size: u32, color: Color) {
+        let text = CString::new(text).unwrap();
+
+        unsafe { ffi::DrawText(text.as_ptr(), x, y, font_size as _, color.into()) }
+    }
+
+    /// Draw text using font and additional parameters
+    #[inline]
+    fn draw_text_ex(
+        &mut self,
+        font: &Font,
+        text: &str,
+        pos: Vector2,
+        font_size: f32,
+        spacing: f32,
+        tint: Color,
+    ) {
+        let text = CString::new(text).unwrap();
+
+        unsafe {
+            ffi::DrawTextEx(
+                font.raw.deref().clone(),
+                text.as_ptr(),
+                pos.into(),
+                font_size,
+                spacing,
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw text using Font and pro parameters (rotation)
+    #[inline]
+    fn draw_text_pro(
+        &mut self,
+        font: &Font,
+        text: &str,
+        pos: Vector2,
+        origin: Vector2,
+        rotation: f32,
+        font_size: f32,
+        spacing: f32,
+        tint: Color,
+    ) {
+        let text = CString::new(text).unwrap();
+
+        unsafe {
+            ffi::DrawTextPro(
+                font.raw.deref().clone(),
+                text.as_ptr(),
+                pos.into(),
+                origin.into(),
+                rotation,
+                font_size,
+                spacing,
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw one character (codepoint)
+    #[inline]
+    fn draw_char(&mut self, font: &Font, ch: char, pos: Vector2, font_size: f32, tint: Color) {
+        unsafe {
+            ffi::DrawTextCodepoint(
+                font.raw.deref().clone(),
+                ch as _,
+                pos.into(),
+                font_size,
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw multiple character (codepoint)
+    #[inline]
+    fn draw_chars(
+        &mut self,
+        font: &Font,
+        chars: &[char],
+        pos: Vector2,
+        font_size: f32,
+        spacing: f32,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawTextCodepoints(
+                font.raw.deref().clone(),
+                chars.as_ptr() as *const _,
+                chars.len() as _,
+                pos.into(),
+                font_size,
+                spacing,
+                tint.into(),
+            )
+        }
+    }
 }
 
 impl<'a> Draw for DrawHandle<'a> {}

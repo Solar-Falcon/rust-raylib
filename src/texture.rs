@@ -328,7 +328,7 @@ impl Image {
         Self {
             raw: unsafe {
                 ffi::ImageTextEx(
-                    font.raw.clone(),
+                    font.raw.deref().clone(),
                     text.as_ptr(),
                     font_size,
                     spacing,
@@ -732,7 +732,7 @@ impl Image {
         unsafe {
             ffi::ImageDrawTextEx(
                 self.as_mut_ptr(),
-                font.raw.clone(),
+                font.raw.deref().clone(),
                 text.as_ptr(),
                 pos.into(),
                 font_size,
@@ -913,8 +913,8 @@ impl Texture {
 impl Drop for Texture {
     #[inline]
     fn drop(&mut self) {
-        if let Some(raw) = Rc::get_mut(&mut self.raw) {
-            unsafe { ffi::UnloadTexture(raw.clone()) }
+        if Rc::strong_count(&self.raw) == 1 {
+            unsafe { ffi::UnloadTexture(self.raw.deref().clone()) }
         }
     }
 }
@@ -956,8 +956,8 @@ impl RenderTexture {
 impl Drop for RenderTexture {
     #[inline]
     fn drop(&mut self) {
-        if let Some(raw) = Rc::get_mut(&mut self.raw) {
-            unsafe { ffi::UnloadRenderTexture(raw.clone()) }
+        if Rc::strong_count(&self.raw) == 1 {
+            unsafe { ffi::UnloadRenderTexture(self.raw.deref().clone()) }
         }
     }
 }

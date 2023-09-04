@@ -1,4 +1,7 @@
-use crate::{ffi, math::{Rectangle, Vector2}};
+use crate::{
+    ffi,
+    math::{Rectangle, Vector2},
+};
 
 /// Check collision between two rectangles
 pub fn check_collision_rects(rec1: Rectangle, rec2: Rectangle) -> bool {
@@ -6,7 +9,12 @@ pub fn check_collision_rects(rec1: Rectangle, rec2: Rectangle) -> bool {
 }
 
 /// Check collision between two circles
-pub fn check_collision_circles(center1: Vector2, radius1: f32, center2: Vector2, radius2: f32) -> bool {
+pub fn check_collision_circles(
+    center1: Vector2,
+    radius1: f32,
+    center2: Vector2,
+    radius2: f32,
+) -> bool {
     unsafe { ffi::CheckCollisionCircles(center1.into(), radius1, center2.into(), radius2) }
 }
 
@@ -32,14 +40,29 @@ pub fn check_point_inside_triangle(point: Vector2, p1: Vector2, p2: Vector2, p3:
 
 /// Check if point is within a polygon described by array of vertices
 pub fn check_point_inside_polygon(point: Vector2, points: &[Vector2]) -> bool {
-    unsafe { ffi::CheckCollisionPointPoly(point.into(), points.as_ptr() as *mut _, points.len() as _) }
+    unsafe {
+        ffi::CheckCollisionPointPoly(point.into(), points.as_ptr() as *mut _, points.len() as _)
+    }
 }
 
 /// Check the collision between two lines defined by two points each, returns collision point
-pub fn check_collision_lines(start_pos1: Vector2, end_pos1: Vector2, start_pos2: Vector2, end_pos2: Vector2) -> Option<Vector2> {
+pub fn check_collision_lines(
+    start_pos1: Vector2,
+    end_pos1: Vector2,
+    start_pos2: Vector2,
+    end_pos2: Vector2,
+) -> Option<Vector2> {
     let mut coll_pt: ffi::Vector2 = ffi::Vector2 { x: 0., y: 0. };
 
-    if unsafe { ffi::CheckCollisionLines(start_pos1.into(), end_pos1.into(), start_pos2.into(), end_pos2.into(), &mut coll_pt as *mut _) } {
+    if unsafe {
+        ffi::CheckCollisionLines(
+            start_pos1.into(),
+            end_pos1.into(),
+            start_pos2.into(),
+            end_pos2.into(),
+            &mut coll_pt as *mut _,
+        )
+    } {
         Some(coll_pt.into())
     } else {
         None
@@ -47,7 +70,12 @@ pub fn check_collision_lines(start_pos1: Vector2, end_pos1: Vector2, start_pos2:
 }
 
 /// Check if point belongs to line created between two points [p1] and [p2] with defined margin in pixels [threshold]
-pub fn check_collision_point_line(point: Vector2, p1: Vector2, p2: Vector2, threshold: u32) -> bool {
+pub fn check_collision_point_line(
+    point: Vector2,
+    p1: Vector2,
+    p2: Vector2,
+    threshold: u32,
+) -> bool {
     unsafe { ffi::CheckCollisionPointLine(point.into(), p1.into(), p2.into(), threshold as _) }
 }
 

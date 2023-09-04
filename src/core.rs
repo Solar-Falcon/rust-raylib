@@ -1,6 +1,9 @@
-use crate::{color::Color, ffi, math::Vector2, texture::Image, drawing::DrawHandle};
+use crate::{color::Color, drawing::DrawHandle, ffi, math::Vector2, texture::Image};
 
-use std::{ffi::{CStr, CString}, time::Duration};
+use std::{
+    ffi::{CStr, CString},
+    time::Duration,
+};
 
 pub use ffi::{
     ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
@@ -452,7 +455,9 @@ impl Raylib {
             paths.push(path.to_string_lossy().into_owned());
         }
 
-        unsafe { ffi::UnloadDroppedFiles(path_list); }
+        unsafe {
+            ffi::UnloadDroppedFiles(path_list);
+        }
 
         paths
     }
@@ -740,7 +745,9 @@ impl Raylib {
     /// Setup canvas (framebuffer) to start drawing
     #[inline]
     pub fn begin_drawing(&mut self) -> DrawHandle {
-        unsafe { ffi::BeginDrawing(); }
+        unsafe {
+            ffi::BeginDrawing();
+        }
 
         DrawHandle(self)
     }

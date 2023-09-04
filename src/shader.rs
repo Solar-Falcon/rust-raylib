@@ -140,13 +140,16 @@ impl Shader {
 impl Drop for Shader {
     #[inline]
     fn drop(&mut self) {
-        if let Some(raw) = Rc::get_mut(&mut self.raw) {
-            unsafe { ffi::UnloadShader(raw.clone()) }
+        if Rc::strong_count(&self.raw) == 1 {
+            unsafe { ffi::UnloadShader(self.raw.deref().clone()) }
         }
     }
 }
 
-pub trait ShaderValue where Self: Sized {
+pub trait ShaderValue
+where
+    Self: Sized,
+{
     const UNIFORM_TYPE: ShaderUniformDataType;
 
     unsafe fn raw_value(&self) -> *const core::ffi::c_void {
