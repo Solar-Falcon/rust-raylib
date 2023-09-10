@@ -25,52 +25,54 @@ impl Shader {
 
     /// Load shader from files and bind default locations
     #[inline]
-    pub fn from_file(vs_filename: Option<&str>, fs_filename: Option<&str>) -> Self {
+    pub fn from_file(vs_filename: Option<&str>, fs_filename: Option<&str>) -> Option<Self> {
         let vs_filename = vs_filename.map(|s| CString::new(s).unwrap());
         let fs_filename = fs_filename.map(|s| CString::new(s).unwrap());
 
-        Self {
-            raw: Rc::new(unsafe {
-                ffi::LoadShader(
-                    match vs_filename {
-                        Some(vs) => vs.as_ptr(),
-                        None => std::ptr::null(),
-                    },
-                    match fs_filename {
-                        Some(fs) => fs.as_ptr(),
-                        None => std::ptr::null(),
-                    },
-                )
-            }),
+        let raw = unsafe {
+            ffi::LoadShader(
+                match vs_filename {
+                    Some(vs) => vs.as_ptr(),
+                    None => std::ptr::null(),
+                },
+                match fs_filename {
+                    Some(fs) => fs.as_ptr(),
+                    None => std::ptr::null(),
+                },
+            )
+        };
+
+        if unsafe { ffi::IsShaderReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load shader from code strings and bind default locations
     #[inline]
-    pub fn from_memory(vs_code: Option<&str>, fs_code: Option<&str>) -> Self {
+    pub fn from_memory(vs_code: Option<&str>, fs_code: Option<&str>) -> Option<Self> {
         let vs_code = vs_code.map(|s| CString::new(s).unwrap());
         let fs_code = fs_code.map(|s| CString::new(s).unwrap());
 
-        Self {
-            raw: Rc::new(unsafe {
-                ffi::LoadShaderFromMemory(
-                    match vs_code {
-                        Some(vs) => vs.as_ptr(),
-                        None => std::ptr::null(),
-                    },
-                    match fs_code {
-                        Some(fs) => fs.as_ptr(),
-                        None => std::ptr::null(),
-                    },
-                )
-            }),
-        }
-    }
+        let raw = unsafe {
+            ffi::LoadShaderFromMemory(
+                match vs_code {
+                    Some(vs) => vs.as_ptr(),
+                    None => std::ptr::null(),
+                },
+                match fs_code {
+                    Some(fs) => fs.as_ptr(),
+                    None => std::ptr::null(),
+                },
+            )
+        };
 
-    /// Check if a shader is ready
-    #[inline]
-    pub fn is_ready(&self) -> bool {
-        unsafe { ffi::IsShaderReady(self.raw.deref().clone()) }
+        if unsafe { ffi::IsShaderReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
+        }
     }
 
     /// Get shader uniform location

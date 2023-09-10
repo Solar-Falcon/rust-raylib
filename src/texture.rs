@@ -39,10 +39,10 @@ pub struct NPatchInfo {
 assert_eq_size!(NPatchInfo, ffi::NPatchInfo);
 assert_eq_align!(NPatchInfo, ffi::NPatchInfo);
 
-impl Into<ffi::NPatchInfo> for NPatchInfo {
+impl From<NPatchInfo> for ffi::NPatchInfo {
     #[inline]
-    fn into(self) -> ffi::NPatchInfo {
-        unsafe { std::mem::transmute(self) }
+    fn from(val: NPatchInfo) -> Self {
+        unsafe { std::mem::transmute(val) }
     }
 }
 
@@ -86,35 +86,43 @@ impl Image {
 
     /// Load image from file into CPU memory (RAM)
     #[inline]
-    pub fn from_file(filename: &str) -> Self {
-        let filename = CString::new(filename).unwrap();
+    pub fn from_file(file_name: &str) -> Option<Self> {
+        let file_name = CString::new(file_name).unwrap();
 
-        Self {
-            raw: unsafe { ffi::LoadImage(filename.as_ptr()) },
+        let raw = unsafe { ffi::LoadImage(file_name.as_ptr()) };
+
+        if unsafe { ffi::IsImageReady(raw.clone()) } {
+            Some(Self { raw })
+        } else {
+            None
         }
     }
 
     /// Load image from RAW file data
     #[inline]
     pub fn from_raw_file(
-        filename: &str,
+        file_name: &str,
         width: u32,
         height: u32,
         format: PixelFormat,
         header_size: u32,
-    ) -> Self {
-        let filename = CString::new(filename).unwrap();
+    ) -> Option<Self> {
+        let file_name = CString::new(file_name).unwrap();
 
-        Self {
-            raw: unsafe {
-                ffi::LoadImageRaw(
-                    filename.as_ptr(),
-                    width as _,
-                    height as _,
-                    format as _,
-                    header_size as _,
-                )
-            },
+        let raw = unsafe {
+            ffi::LoadImageRaw(
+                file_name.as_ptr(),
+                width as _,
+                height as _,
+                format as _,
+                header_size as _,
+            )
+        };
+
+        if unsafe { ffi::IsImageReady(raw.clone()) } {
+            Some(Self { raw })
+        } else {
+            None
         }
     }
 
@@ -122,63 +130,73 @@ impl Image {
     ///
     /// Returns the amount of frames in the image.
     #[inline]
-    pub fn from_file_anim(filename: &str) -> (Self, usize) {
-        let filename = CString::new(filename).unwrap();
+    pub fn from_file_anim(file_name: &str) -> Option<(Self, usize)> {
+        let file_name = CString::new(file_name).unwrap();
         let mut frames: i32 = 0;
 
-        let image = unsafe { ffi::LoadImageAnim(filename.as_ptr(), (&mut frames) as *mut _) };
+        let image = unsafe { ffi::LoadImageAnim(file_name.as_ptr(), (&mut frames) as *mut _) };
 
-        (Self { raw: image }, frames as usize)
+        if unsafe { ffi::IsImageReady(image.clone()) } {
+            Some((Self { raw: image }, frames as _))
+        } else {
+            None
+        }
     }
 
     /// Load image from memory buffer, fileType refers to extension: i.e. '.png'
     #[inline]
-    pub fn from_memory(filetype: &str, filedata: &[u8]) -> Self {
+    pub fn from_memory(filetype: &str, filedata: &[u8]) -> Option<Self> {
         let filetype = CString::new(filetype).unwrap();
 
-        Self {
-            raw: unsafe {
-                ffi::LoadImageFromMemory(filetype.as_ptr(), filedata.as_ptr(), filedata.len() as _)
-            },
+        let raw = unsafe {
+            ffi::LoadImageFromMemory(filetype.as_ptr(), filedata.as_ptr(), filedata.len() as _)
+        };
+
+        if unsafe { ffi::IsImageReady(raw.clone()) } {
+            Some(Self { raw })
+        } else {
+            None
         }
     }
 
     /// Load image from GPU texture data
     #[inline]
-    pub fn from_texture(texture: &Texture) -> Self {
-        Self {
-            raw: unsafe { ffi::LoadImageFromTexture(texture.raw.deref().clone()) },
+    pub fn from_texture(texture: &Texture) -> Option<Self> {
+        let raw = unsafe { ffi::LoadImageFromTexture(texture.raw.deref().clone()) };
+
+        if unsafe { ffi::IsImageReady(raw.clone()) } {
+            Some(Self { raw })
+        } else {
+            None
         }
     }
 
     /// Load image from screen buffer and (screenshot)
     #[inline]
-    pub fn from_screen(_raylib: &Raylib) -> Self {
-        Self {
-            raw: unsafe { ffi::LoadImageFromScreen() },
-        }
-    }
+    pub fn from_screen(_raylib: &Raylib) -> Option<Self> {
+        let raw = unsafe { ffi::LoadImageFromScreen() };
 
-    /// Check if an image is ready
-    #[inline]
-    pub fn is_ready(&self) -> bool {
-        unsafe { ffi::IsImageReady(self.raw.clone()) }
+        if unsafe { ffi::IsImageReady(raw.clone()) } {
+            Some(Self { raw })
+        } else {
+            None
+        }
     }
 
     /// Export image data to file, returns true on success
     #[inline]
-    pub fn export(&self, filename: &str) -> bool {
-        let filename = CString::new(filename).unwrap();
+    pub fn export(&self, file_name: &str) -> bool {
+        let file_name = CString::new(file_name).unwrap();
 
-        unsafe { ffi::ExportImage(self.raw.clone(), filename.as_ptr()) }
+        unsafe { ffi::ExportImage(self.raw.clone(), file_name.as_ptr()) }
     }
 
     /// Export image as code file defining an array of bytes, returns true on success
     #[inline]
-    pub fn export_as_code(&self, filename: &str) -> bool {
-        let filename = CString::new(filename).unwrap();
+    pub fn export_as_code(&self, file_name: &str) -> bool {
+        let file_name = CString::new(file_name).unwrap();
 
-        unsafe { ffi::ExportImageAsCode(self.raw.clone(), filename.as_ptr()) }
+        unsafe { ffi::ExportImageAsCode(self.raw.clone(), file_name.as_ptr()) }
     }
 
     /// Generate image: plain color
@@ -809,34 +827,40 @@ impl Texture {
 
     /// Load texture from file into GPU memory (VRAM)
     #[inline]
-    pub fn from_file(filename: &str) -> Self {
-        let filename = CString::new(filename).unwrap();
+    pub fn from_file(file_name: &str) -> Option<Self> {
+        let file_name = CString::new(file_name).unwrap();
 
-        Self {
-            raw: Rc::new(unsafe { ffi::LoadTexture(filename.as_ptr()) }),
+        let raw = unsafe { ffi::LoadTexture(file_name.as_ptr()) };
+
+        if unsafe { ffi::IsTextureReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load texture from image data
     #[inline]
-    pub fn from_image(image: &Image) -> Self {
-        Self {
-            raw: Rc::new(unsafe { ffi::LoadTextureFromImage(image.raw.clone()) }),
+    pub fn from_image(image: &Image) -> Option<Self> {
+        let raw = unsafe { ffi::LoadTextureFromImage(image.raw.clone()) };
+
+        if unsafe { ffi::IsTextureReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load cubemap from image, multiple image cubemap layouts supported
     #[inline]
-    pub fn from_cubemap(image: &Image, layout: CubemapLayout) -> TextureCubemap {
-        Self {
-            raw: Rc::new(unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) }),
-        }
-    }
+    pub fn from_cubemap(image: &Image, layout: CubemapLayout) -> Option<TextureCubemap> {
+        let raw = unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) };
 
-    /// Check if a texture is ready
-    #[inline]
-    pub fn is_ready(&self) -> bool {
-        unsafe { ffi::IsTextureReady(self.raw.deref().clone()) }
+        if unsafe { ffi::IsTextureReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
+        }
     }
 
     /// Update GPU texture with new data
@@ -940,16 +964,14 @@ impl RenderTexture {
 
     /// Load texture for rendering (framebuffer)
     #[inline]
-    pub fn new(width: u32, height: u32) -> Self {
-        Self {
-            raw: Rc::new(unsafe { ffi::LoadRenderTexture(width as _, height as _) }),
-        }
-    }
+    pub fn new(width: u32, height: u32) -> Option<Self> {
+        let raw = unsafe { ffi::LoadRenderTexture(width as _, height as _) };
 
-    /// Check if a render texture is ready
-    #[inline]
-    pub fn is_ready(&self) -> bool {
-        unsafe { ffi::IsRenderTextureReady(self.raw.deref().clone()) }
+        if unsafe { ffi::IsRenderTextureReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
+        }
     }
 }
 

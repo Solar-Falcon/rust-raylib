@@ -27,7 +27,7 @@ impl<'a> Deref for DrawHandle<'a> {
     type Target = Raylib;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -53,7 +53,7 @@ impl<'a, T> Deref for DrawMode2D<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -79,7 +79,7 @@ impl<'a, T> Deref for DrawMode3D<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -105,7 +105,7 @@ impl<'a, T> Deref for DrawTextureMode<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -131,7 +131,7 @@ impl<'a, T> Deref for DrawShaderMode<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -157,7 +157,7 @@ impl<'a, T> Deref for DrawBlendMode<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -183,7 +183,7 @@ impl<'a, T> Deref for DrawScissorMode<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
@@ -209,7 +209,7 @@ impl<'a, T> Deref for DrawVrStereoMode<'a, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 

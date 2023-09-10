@@ -35,72 +35,82 @@ impl Font {
 
     /// Load font from file into GPU memory (VRAM)
     #[inline]
-    pub fn from_file(filename: &str) -> Self {
-        let filename = CString::new(filename).unwrap();
+    pub fn from_file(file_name: &str) -> Option<Self> {
+        let file_name = CString::new(file_name).unwrap();
 
-        Self {
-            raw: Rc::new(unsafe { ffi::LoadFont(filename.as_ptr()) }),
+        let raw = unsafe { ffi::LoadFont(file_name.as_ptr()) };
+
+        if unsafe { ffi::IsFontReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load font from file with extended parameters
     #[inline]
-    pub fn from_file_ex(filename: &str, font_size: u32, chars: &[char]) -> Self {
-        let filename = CString::new(filename).unwrap();
+    pub fn from_file_ex(file_name: &str, font_size: u32, chars: &[char]) -> Option<Self> {
+        let file_name = CString::new(file_name).unwrap();
 
-        Self {
-            raw: Rc::new(unsafe {
-                ffi::LoadFontEx(
-                    filename.as_ptr(),
-                    font_size as _,
-                    chars.as_ptr() as *mut _,
-                    chars.len() as _,
-                )
-            }),
+        let raw = unsafe {
+            ffi::LoadFontEx(
+                file_name.as_ptr(),
+                font_size as _,
+                chars.as_ptr() as *mut _,
+                chars.len() as _,
+            )
+        };
+
+        if unsafe { ffi::IsFontReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load font from Image (XNA style)
     #[inline]
-    pub fn from_image(image: &Image, key_color: Color, first_char: char) -> Self {
-        Self {
-            raw: Rc::new(unsafe {
-                ffi::LoadFontFromImage(image.raw.clone(), key_color.into(), first_char as _)
-            }),
+    pub fn from_image(image: &Image, key_color: Color, first_char: char) -> Option<Self> {
+        let raw = unsafe {
+            ffi::LoadFontFromImage(image.raw.clone(), key_color.into(), first_char as _)
+        };
+
+        if unsafe { ffi::IsFontReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
         }
     }
 
     /// Load font from memory buffer, fileType refers to extension: i.e. '.ttf'
     #[inline]
-    pub fn from_memory(file_type: &str, file_data: &[u8], font_size: u32, chars: &[char]) -> Self {
+    pub fn from_memory(file_type: &str, file_data: &[u8], font_size: u32, chars: &[char]) -> Option<Self> {
         let file_type = CString::new(file_type).unwrap();
 
-        Self {
-            raw: Rc::new(unsafe {
-                ffi::LoadFontFromMemory(
-                    file_type.as_ptr(),
-                    file_data.as_ptr(),
-                    file_data.len() as _,
-                    font_size as _,
-                    chars.as_ptr() as *mut _,
-                    chars.len() as _,
-                )
-            }),
-        }
-    }
+        let raw = unsafe {
+            ffi::LoadFontFromMemory(
+                file_type.as_ptr(),
+                file_data.as_ptr(),
+                file_data.len() as _,
+                font_size as _,
+                chars.as_ptr() as *mut _,
+                chars.len() as _,
+            )
+        };
 
-    /// Check if a font is ready
-    #[inline]
-    pub fn is_ready(&self) -> bool {
-        unsafe { ffi::IsFontReady(self.raw.deref().clone()) }
+        if unsafe { ffi::IsFontReady(raw.clone()) } {
+            Some(Self { raw: Rc::new(raw) })
+        } else {
+            None
+        }
     }
 
     /// Export font as code file, returns true on success
     #[inline]
-    pub fn export_as_code(&self, filename: &str) -> bool {
-        let filename = CString::new(filename).unwrap();
+    pub fn export_as_code(&self, file_name: &str) -> bool {
+        let file_name = CString::new(file_name).unwrap();
 
-        unsafe { ffi::ExportFontAsCode(self.raw.deref().clone(), filename.as_ptr()) }
+        unsafe { ffi::ExportFontAsCode(self.raw.deref().clone(), file_name.as_ptr()) }
     }
 
     /// Measure string width for default font
@@ -176,7 +186,7 @@ pub fn gen_image_font_atlas(
     font_size: u32,
     padding: i32,
     skyline_pack: bool,
-) -> (Image, Vec<Rectangle>) {
+) -> Option<(Image, Vec<Rectangle>)> {
     assert!(!chars.is_empty());
 
     let mut recs: *mut ffi::Rectangle = std::ptr::null_mut();
@@ -202,15 +212,21 @@ pub fn gen_image_font_atlas(
         )
     };
 
+    if !unsafe { ffi::IsImageReady(image.clone()) } {
+        return None;
+    }
+
     let mut vec = Vec::new();
 
     for i in 0..chars.len() {
         vec.push(unsafe { recs.add(i).read().into() });
     }
 
-    unsafe { ffi::MemFree(recs as *mut _); }
+    unsafe {
+        ffi::MemFree(recs as *mut _);
+    }
 
-    (Image { raw: image }, vec)
+    Some((Image { raw: image }, vec))
 }
 
 /// GlyphInfo, font characters glyphs info

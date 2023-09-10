@@ -93,13 +93,13 @@ pub use crate::core::*;
         /// Get file length in bytes (NOTE: GetFileSize() conflicts with windows.h)
         pub fn GetFileLength(fileName: *const core::ffi::c_char) -> u32;
 
-        /// Get pointer to extension for a filename string (includes dot: '.png')
+        /// Get pointer to extension for a file_name string (includes dot: '.png')
         pub fn GetFileExtension(fileName: *const core::ffi::c_char) -> *const core::ffi::c_char;
 
-        /// Get pointer to filename for a path string
+        /// Get pointer to file_name for a path string
         pub fn GetFileName(filePath: *const core::ffi::c_char) -> *const core::ffi::c_char;
 
-        /// Get filename string without extension (uses static string)
+        /// Get file_name string without extension (uses static string)
         pub fn GetFileNameWithoutExt(filePath: *const core::ffi::c_char) -> *const core::ffi::c_char;
 
         /// Get full path for a given fileName with path (uses static string)

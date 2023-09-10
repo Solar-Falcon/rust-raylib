@@ -339,10 +339,10 @@ impl Color {
     }
 }
 
-impl Into<ffi::Color> for Color {
+impl From<Color> for ffi::Color {
     #[inline]
-    fn into(self) -> ffi::Color {
-        unsafe { std::mem::transmute(self) }
+    fn from(val: Color) -> Self {
+        unsafe { std::mem::transmute(val) }
     }
 }
 

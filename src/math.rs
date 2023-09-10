@@ -9,10 +9,10 @@ pub type Vector2 = mint::Vector2<f32>;
 assert_eq_size!(Vector2, ffi::Vector2);
 assert_eq_align!(Vector2, ffi::Vector2);
 
-impl Into<ffi::Vector2> for Vector2 {
+impl From<Vector2> for ffi::Vector2 {
     #[inline]
-    fn into(self) -> ffi::Vector2 {
-        unsafe { transmute(self) }
+    fn from(val: Vector2) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -28,10 +28,10 @@ pub type Vector3 = mint::Vector3<f32>;
 assert_eq_size!(Vector3, ffi::Vector3);
 assert_eq_align!(Vector3, ffi::Vector3);
 
-impl Into<ffi::Vector3> for Vector3 {
+impl From<Vector3> for ffi::Vector3 {
     #[inline]
-    fn into(self) -> ffi::Vector3 {
-        unsafe { transmute(self) }
+    fn from(val: Vector3) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -47,10 +47,10 @@ pub type Vector4 = mint::Vector4<f32>;
 assert_eq_size!(Vector4, ffi::Vector4);
 assert_eq_align!(Vector4, ffi::Vector4);
 
-impl Into<ffi::Vector4> for Vector4 {
+impl From<Vector4> for ffi::Vector4 {
     #[inline]
-    fn into(self) -> ffi::Vector4 {
-        unsafe { transmute(self) }
+    fn from(val: Vector4) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -66,10 +66,10 @@ pub type Quaternion = mint::Quaternion<f32>;
 assert_eq_size!(Quaternion, ffi::Quaternion);
 assert_eq_align!(Quaternion, ffi::Quaternion);
 
-impl Into<ffi::Vector4> for Quaternion {
+impl From<Quaternion> for ffi::Vector4 {
     #[inline]
-    fn into(self) -> ffi::Vector4 {
-        unsafe { transmute(self) }
+    fn from(val: Quaternion) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -85,10 +85,10 @@ pub type Matrix = mint::ColumnMatrix4<f32>;
 assert_eq_size!(Matrix, ffi::Matrix);
 assert_eq_align!(Matrix, ffi::Matrix);
 
-impl Into<ffi::Matrix> for Matrix {
+impl From<Matrix> for ffi::Matrix {
     #[inline]
-    fn into(self) -> ffi::Matrix {
-        unsafe { transmute(self) }
+    fn from(val: Matrix) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -130,10 +130,10 @@ impl Rectangle {
     }
 }
 
-impl Into<ffi::Rectangle> for Rectangle {
+impl From<Rectangle> for ffi::Rectangle {
     #[inline]
-    fn into(self) -> ffi::Rectangle {
-        unsafe { transmute(self) }
+    fn from(val: Rectangle) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -157,10 +157,10 @@ pub struct Ray {
 assert_eq_size!(Ray, ffi::Ray);
 assert_eq_align!(Ray, ffi::Ray);
 
-impl Into<ffi::Ray> for Ray {
+impl From<Ray> for ffi::Ray {
     #[inline]
-    fn into(self) -> ffi::Ray {
-        unsafe { transmute(self) }
+    fn from(val: Ray) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -188,10 +188,10 @@ pub struct RayCollision {
 assert_eq_size!(RayCollision, ffi::RayCollision);
 assert_eq_align!(RayCollision, ffi::RayCollision);
 
-impl Into<ffi::RayCollision> for RayCollision {
+impl From<RayCollision> for ffi::RayCollision {
     #[inline]
-    fn into(self) -> ffi::RayCollision {
-        unsafe { transmute(self) }
+    fn from(val: RayCollision) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -215,10 +215,10 @@ pub struct BoundingBox {
 assert_eq_size!(Ray, ffi::BoundingBox);
 assert_eq_align!(Ray, ffi::BoundingBox);
 
-impl Into<ffi::BoundingBox> for BoundingBox {
+impl From<BoundingBox> for ffi::BoundingBox {
     #[inline]
-    fn into(self) -> ffi::BoundingBox {
-        unsafe { transmute(self) }
+    fn from(val: BoundingBox) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -267,10 +267,10 @@ impl Camera2D {
     }
 }
 
-impl Into<ffi::Camera2D> for Camera2D {
+impl From<Camera2D> for ffi::Camera2D {
     #[inline]
-    fn into(self) -> ffi::Camera2D {
-        unsafe { transmute(self) }
+    fn from(val: Camera2D) -> Self {
+        unsafe { transmute(val) }
     }
 }
 
@@ -354,10 +354,10 @@ impl Camera3D {
     }
 }
 
-impl Into<ffi::Camera3D> for Camera3D {
+impl From<Camera3D> for ffi::Camera3D {
     #[inline]
-    fn into(self) -> ffi::Camera3D {
-        unsafe { transmute(self) }
+    fn from(val: Camera3D) -> Self {
+        unsafe { transmute(val) }
     }
 }
 

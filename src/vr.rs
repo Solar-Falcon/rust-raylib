@@ -32,10 +32,10 @@ pub struct VrDeviceInfo {
 assert_eq_size!(VrDeviceInfo, ffi::VrDeviceInfo);
 assert_eq_align!(VrDeviceInfo, ffi::VrDeviceInfo);
 
-impl Into<ffi::VrDeviceInfo> for VrDeviceInfo {
+impl From<VrDeviceInfo> for ffi::VrDeviceInfo {
     #[inline]
-    fn into(self) -> ffi::VrDeviceInfo {
-        unsafe { std::mem::transmute(self) }
+    fn from(val: VrDeviceInfo) -> Self {
+        unsafe { std::mem::transmute(val) }
     }
 }
 
@@ -72,7 +72,7 @@ pub struct VrStereoConfig {
 impl VrStereoConfig {
     /// Load VR stereo config for VR simulator device parameters
     pub fn load(device: VrDeviceInfo) -> Self {
-        // raylib 4.5.0 doesn't allocate VrStereoConfig and UnloadVrStereoConfig is an empty funcy
+        // raylib 4.5.0 doesn't allocate VrStereoConfig and UnloadVrStereoConfig is an empty func
         assert_eq!(crate::RAYLIB_VERSION, "4.5");
 
         unsafe { ffi::LoadVrStereoConfig(device.into()).into() }
@@ -82,20 +82,20 @@ impl VrStereoConfig {
 assert_eq_size!(VrStereoConfig, ffi::VrStereoConfig);
 assert_eq_align!(VrStereoConfig, ffi::VrStereoConfig);
 
-impl Into<ffi::VrStereoConfig> for VrStereoConfig {
+impl From<VrStereoConfig> for ffi::VrStereoConfig {
     #[inline]
-    fn into(self) -> ffi::VrStereoConfig {
+    fn from(val: VrStereoConfig) -> Self {
         // raylib 4.5.0 doesn't allocate VrStereoConfig and UnloadVrStereoConfig is an empty func
         assert_eq!(crate::RAYLIB_VERSION, "4.5");
 
-        unsafe { std::mem::transmute(self) }
+        unsafe { std::mem::transmute(val) }
     }
 }
 
 impl From<ffi::VrStereoConfig> for VrStereoConfig {
     #[inline]
     fn from(value: ffi::VrStereoConfig) -> Self {
-        // raylib 4.5.0 doesn't allocate VrStereoConfig and UnloadVrStereoConfig is an empty funcy
+        // raylib 4.5.0 doesn't allocate VrStereoConfig and UnloadVrStereoConfig is an empty func
         assert_eq!(crate::RAYLIB_VERSION, "4.5");
 
         unsafe { std::mem::transmute(value) }

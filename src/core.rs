@@ -16,19 +16,23 @@ pub struct Raylib(std::marker::PhantomData<*const ()>);
 impl Raylib {
     /// Initialize window and OpenGL context
     #[inline]
-    pub fn init_window(width: u32, height: u32, title: &str) -> Self {
+    pub fn init_window(width: u32, height: u32, title: &str) -> Option<Self> {
         let title = CString::new(title).unwrap();
 
         unsafe {
             ffi::InitWindow(width as _, height as _, title.as_ptr());
         }
 
-        Self(std::marker::PhantomData)
+        if unsafe { ffi::IsWindowReady() } {
+            Some(Self(std::marker::PhantomData))
+        } else {
+            None
+        }
     }
 
     /// Initialize window and OpenGL context with config flags
     #[inline]
-    pub fn init_window_ex(width: u32, height: u32, title: &str, flags: ConfigFlags) -> Self {
+    pub fn init_window_ex(width: u32, height: u32, title: &str, flags: ConfigFlags) -> Option<Self> {
         unsafe {
             ffi::SetConfigFlags(flags.bits());
         }
@@ -46,12 +50,6 @@ impl Raylib {
     #[inline]
     pub fn close_window(self) {
         drop(self)
-    }
-
-    /// Check if window has been initialized successfully
-    #[inline]
-    pub fn is_window_ready(&self) -> bool {
-        unsafe { ffi::IsWindowReady() }
     }
 
     /// Check if window is currently fullscreen
@@ -339,8 +337,8 @@ impl Raylib {
     /// Wait for some time (halt program execution)
     /// NOTE: Those functions are intended for advance users that want full control over the frame processing
     #[inline]
-    pub fn wait_time(&mut self, seconds: f64) {
-        unsafe { ffi::WaitTime(seconds) }
+    pub fn wait_time(&mut self, duration: Duration) {
+        unsafe { ffi::WaitTime(duration.as_secs_f64()) }
     }
 
     /// Shows cursor
@@ -421,12 +419,12 @@ impl Raylib {
         unsafe { ffi::SetRandomSeed(seed) }
     }
 
-    /// Takes a screenshot of current screen (filename extension defines format)
+    /// Takes a screenshot of current screen (file_name extension defines format)
     #[inline]
-    pub fn take_screenshot(&mut self, filename: &str) {
-        let filename = CString::new(filename).unwrap();
+    pub fn take_screenshot(&mut self, file_name: &str) {
+        let file_name = CString::new(file_name).unwrap();
 
-        unsafe { ffi::TakeScreenshot(filename.as_ptr()) }
+        unsafe { ffi::TakeScreenshot(file_name.as_ptr()) }
     }
 
     /// Open URL with default system browser (if available)
@@ -521,7 +519,7 @@ impl Raylib {
     pub fn get_gamepad_name(&self, gamepad: u32) -> String {
         let name = unsafe { ffi::GetGamepadName(gamepad as _) };
 
-        if name.is_null() {
+        if !name.is_null() {
             let name = unsafe { CStr::from_ptr(name) };
 
             name.to_string_lossy().into_owned()
