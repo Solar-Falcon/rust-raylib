@@ -11,7 +11,7 @@ pub use ffi::{
 
 /// Main raylib handle
 #[derive(Debug)]
-pub struct Raylib(());
+pub struct Raylib(std::marker::PhantomData<*const ()>);
 
 impl Raylib {
     /// Initialize window and OpenGL context
@@ -23,7 +23,7 @@ impl Raylib {
             ffi::InitWindow(width as _, height as _, title.as_ptr());
         }
 
-        Self(())
+        Self(std::marker::PhantomData)
     }
 
     /// Initialize window and OpenGL context with config flags

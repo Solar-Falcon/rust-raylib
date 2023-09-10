@@ -131,6 +131,22 @@ impl Font {
     pub fn get_glyph_atlas_rect(&self, codepoint: char) -> Rectangle {
         unsafe { ffi::GetGlyphAtlasRec(self.raw.deref().clone(), codepoint as _).into() }
     }
+
+    /// Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
+    #[inline]
+    pub fn get_glyph_info(&self, codepoint: char) -> GlyphInfo {
+        let info = unsafe { ffi::GetGlyphInfo(self.raw.deref().clone(), codepoint as _) };
+
+        GlyphInfo {
+            value: char::from_u32(info.value as _).unwrap(),
+            offset_x: info.offsetX,
+            offset_y: info.offsetY,
+            advance_x: info.advanceX,
+            image: Image {
+                raw: unsafe { ffi::ImageCopy(info.image) },
+            },
+        }
+    }
 }
 
 impl Default for Font {
@@ -152,20 +168,110 @@ impl Drop for Font {
     }
 }
 
-// /// Load font data for further use
-// #[inline]
-// pub fn LoadFontData(fileData: *const core::ffi::c_uchar, dataSize: core::ffi::c_int, fontSize: core::ffi::c_int, fontChars: *mut core::ffi::c_int, glyphCount: core::ffi::c_int, r#type: core::ffi::c_int, ) -> *mut GlyphInfo;
+/// Generate image font atlas using chars info
+#[inline]
+pub fn gen_image_font_atlas(
+    chars: Vec<GlyphInfo>,
+    font_size: u32,
+    padding: i32,
+    skyline_pack: bool,
+) -> (Image, Vec<Rectangle>) {
+    let mut recs: *mut ffi::Rectangle = std::ptr::null_mut();
+    let chars_ffi: Vec<_> = chars
+        .iter()
+        .map(|gi| ffi::GlyphInfo {
+            value: gi.value as _,
+            offsetX: gi.offset_x as _,
+            offsetY: gi.offset_y as _,
+            advanceX: gi.advance_x as _,
+            image: gi.image.raw.clone(),
+        })
+        .collect();
 
-// /// Generate image font atlas using chars info
-// #[inline]
-// pub fn GenImageFontAtlas(chars: *const GlyphInfo, recs: *mut *mut Rectangle, glyphCount: core::ffi::c_int, fontSize: core::ffi::c_int, padding: core::ffi::c_int, packMethod: core::ffi::c_int, ) -> Image;
+    let image = unsafe {
+        ffi::GenImageFontAtlas(
+            chars_ffi.as_ptr(),
+            (&mut recs) as *mut _,
+            chars.len() as _,
+            font_size as _,
+            padding,
+            if skyline_pack { 1 } else { 0 },
+        )
+    };
 
-// /// Unload font chars info data (RAM)
-// #[inline]
-// pub fn UnloadFontData(chars: *mut GlyphInfo, glyphCount: core::ffi::c_int, );
+    let mut vec = Vec::new();
 
-// /// Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
-// #[inline]
-// pub fn get_glyph_info(&self, codepoint: char) -> GlyphInfo {
+    for i in 0..chars.len() {
+        vec.push(unsafe { recs.add(i).read().into() });
+    }
 
-// }
+    unsafe { ffi::MemFree(recs as *mut _); }
+
+    (Image { raw: image }, vec)
+}
+
+/// GlyphInfo, font characters glyphs info
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct GlyphInfo {
+    /// Character value (Unicode)
+    pub value: char,
+    /// Character offset X when drawing
+    pub offset_x: i32,
+    /// Character offset Y when drawing
+    pub offset_y: i32,
+    /// Character advance position X
+    pub advance_x: i32,
+    /// Character image data
+    pub image: Image,
+}
+
+impl GlyphInfo {
+    /// Load font data for further use
+    #[inline]
+    pub fn from_file_data(
+        file_data: &[u8],
+        font_size: u32,
+        font_chars: &[char],
+        font_type: FontType,
+    ) -> Vec<GlyphInfo> {
+        let len = font_chars.len();
+
+        let infos = unsafe {
+            ffi::LoadFontData(
+                file_data.as_ptr(),
+                file_data.len() as _,
+                font_size as _,
+                if len != 0 {
+                    font_chars.as_ptr()
+                } else {
+                    std::ptr::null()
+                } as *mut _,
+                len as _,
+                font_type as _,
+            )
+        };
+
+        let mut vec = Vec::new();
+
+        for i in 0..len {
+            let gi = unsafe { infos.add(i).read() };
+
+            vec.push(GlyphInfo {
+                value: char::from_u32(gi.value as _).unwrap(),
+                offset_x: gi.offsetX,
+                offset_y: gi.offsetY,
+                advance_x: gi.advanceX,
+                image: Image {
+                    raw: unsafe { ffi::ImageCopy(gi.image) },
+                },
+            });
+        }
+
+        unsafe {
+            ffi::UnloadFontData(infos, len as _);
+        }
+
+        vec
+    }
+}
