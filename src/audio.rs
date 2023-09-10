@@ -120,7 +120,14 @@ impl Wave {
     /// Convert wave data to desired format
     #[inline]
     pub fn convert_to_format(&mut self, sample_rate: u32, sample_size: u32, channels: u32) {
-        unsafe { ffi::WaveFormat(&mut self.raw as *mut _, sample_rate as _, sample_size as _, channels as _) }
+        unsafe {
+            ffi::WaveFormat(
+                &mut self.raw as *mut _,
+                sample_rate as _,
+                sample_size as _,
+                channels as _,
+            )
+        }
     }
 
     /// Load samples data from wave as a 32bit float data array
@@ -135,7 +142,9 @@ impl Wave {
             vec.push(unsafe { samples.add(i).read() });
         }
 
-        unsafe { ffi::UnloadWaveSamples(samples); }
+        unsafe {
+            ffi::UnloadWaveSamples(samples);
+        }
 
         vec
     }
@@ -145,7 +154,7 @@ impl Clone for Wave {
     #[inline]
     fn clone(&self) -> Self {
         Self {
-            raw: unsafe { ffi::WaveCopy(self.raw.clone()) }
+            raw: unsafe { ffi::WaveCopy(self.raw.clone()) },
         }
     }
 }
@@ -197,7 +206,13 @@ impl AudioStream {
     /// Update audio stream buffers with data
     #[inline]
     pub fn update(&mut self, data: &[u8], frame_count: u32) {
-        unsafe { ffi::UpdateAudioStream(self.raw.clone(), data.as_ptr() as *const _, frame_count as _) }
+        unsafe {
+            ffi::UpdateAudioStream(
+                self.raw.clone(),
+                data.as_ptr() as *const _,
+                frame_count as _,
+            )
+        }
     }
 
     /// Check if any audio stream buffers requires refill
@@ -418,7 +433,9 @@ impl Music {
     pub fn from_memory(file_type: &str, data: &[u8]) -> Option<Self> {
         let file_type = CString::new(file_type).unwrap();
 
-        let raw = unsafe { ffi::LoadMusicStreamFromMemory(file_type.as_ptr(), data.as_ptr(), data.len() as _) };
+        let raw = unsafe {
+            ffi::LoadMusicStreamFromMemory(file_type.as_ptr(), data.as_ptr(), data.len() as _)
+        };
 
         if unsafe { ffi::IsMusicReady(raw.clone()) } {
             Some(Self { raw })
@@ -426,7 +443,7 @@ impl Music {
             None
         }
     }
-    
+
     /// Start music playing
     #[inline]
     pub fn play(&self, _device: &mut AudioDevice) {

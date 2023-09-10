@@ -1,10 +1,11 @@
 use crate::{
     color::Color,
     ffi,
-    math::{Camera2D, Camera3D, Rectangle, Vector2},
+    math::{BoundingBox, Camera, Camera2D, Camera3D, Ray, Rectangle, Vector2, Vector3, Matrix},
+    model::{Model, Mesh, Material},
     shader::Shader,
     text::Font,
-    texture::{NPatchInfo, RenderTexture2D, Texture},
+    texture::{NPatchInfo, RenderTexture2D, Texture, Texture2D},
     vr::VrStereoConfig,
     Raylib,
 };
@@ -305,13 +306,13 @@ where
 
     /// Draw a Texture2D
     #[inline]
-    fn draw_texture(&mut self, tex: &Texture, x: i32, y: i32, tint: Color) {
+    fn draw_texture(&mut self, tex: Texture, x: i32, y: i32, tint: Color) {
         unsafe { ffi::DrawTexture(tex.raw.deref().clone(), x, y, tint.into()) }
     }
 
     /// Draw a Texture2D with position defined as Vector2
     #[inline]
-    fn draw_texture_v(&mut self, tex: &Texture, pos: Vector2, tint: Color) {
+    fn draw_texture_v(&mut self, tex: Texture, pos: Vector2, tint: Color) {
         unsafe { ffi::DrawTextureV(tex.raw.deref().clone(), pos.into(), tint.into()) }
     }
 
@@ -319,7 +320,7 @@ where
     #[inline]
     fn draw_texture_ex(
         &mut self,
-        tex: &Texture,
+        tex: Texture,
         pos: Vector2,
         rotation: f32,
         scale: f32,
@@ -338,7 +339,7 @@ where
 
     /// Draw a part of a texture defined by a rectangle
     #[inline]
-    fn draw_texture_rect(&mut self, tex: &Texture, source: Rectangle, pos: Vector2, tint: Color) {
+    fn draw_texture_rect(&mut self, tex: Texture, source: Rectangle, pos: Vector2, tint: Color) {
         // rectangle checks?
         unsafe {
             ffi::DrawTextureRec(
@@ -354,7 +355,7 @@ where
     #[inline]
     fn draw_texture_pro(
         &mut self,
-        tex: &Texture,
+        tex: Texture,
         source: Rectangle,
         dest: Rectangle,
         origin: Vector2,
@@ -378,7 +379,7 @@ where
     #[inline]
     fn draw_texture_patch(
         &mut self,
-        tex: &Texture,
+        tex: Texture,
         patch_info: NPatchInfo,
         dest: Rectangle,
         origin: Vector2,
@@ -399,7 +400,7 @@ where
 
     /// Set texture and rectangle to be used on shapes drawing
     #[inline]
-    fn set_shapes_texture(&mut self, texture: &Texture, source: Rectangle) {
+    fn set_shapes_texture(&mut self, texture: Texture, source: Rectangle) {
         unsafe { ffi::SetShapesTexture(texture.raw.deref().clone(), source.into()) }
     }
 
@@ -949,6 +950,406 @@ where
                 tint.into(),
             )
         }
+    }
+
+    /// Draw a line in 3D world space
+    fn draw_line_3d(&mut self, start_pos: Vector3, end_pos: Vector3, color: Color) {
+        unsafe { ffi::DrawLine3D(start_pos.into(), end_pos.into(), color.into()) }
+    }
+
+    /// Draw a point in 3D space, actually a small line
+    fn draw_point_3d(&mut self, position: Vector3, color: Color) {
+        unsafe { ffi::DrawPoint3D(position.into(), color.into()) }
+    }
+
+    /// Draw a circle in 3D world space
+    fn draw_circle_3d(
+        &mut self,
+        center: Vector3,
+        radius: f32,
+        rotation_axis: Vector3,
+        rotation_angle: f32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCircle3D(
+                center.into(),
+                radius,
+                rotation_axis.into(),
+                rotation_angle,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a color-filled triangle (vertex in counter-clockwise order!)
+    fn draw_triangle_3d(&mut self, v1: Vector3, v2: Vector3, v3: Vector3, color: Color) {
+        unsafe { ffi::DrawTriangle3D(v1.into(), v2.into(), v3.into(), color.into()) }
+    }
+
+    /// Draw a triangle strip defined by points
+    fn draw_triangle_strip_3d(&mut self, points: &[Vector3], color: Color) {
+        unsafe {
+            ffi::DrawTriangleStrip3D(points.as_ptr() as *mut _, points.len() as _, color.into())
+        }
+    }
+
+    /// Draw cube
+    fn draw_cube(&mut self, position: Vector3, width: f32, height: f32, length: f32, color: Color) {
+        unsafe { ffi::DrawCube(position.into(), width, height, length, color.into()) }
+    }
+
+    /// Draw cube (Vector version)
+    fn draw_cube_v(&mut self, position: Vector3, size: Vector3, color: Color) {
+        unsafe { ffi::DrawCubeV(position.into(), size.into(), color.into()) }
+    }
+
+    /// Draw cube wires
+    fn draw_cube_wires(
+        &mut self,
+        position: Vector3,
+        width: f32,
+        height: f32,
+        length: f32,
+        color: Color,
+    ) {
+        unsafe { ffi::DrawCubeWires(position.into(), width, height, length, color.into()) }
+    }
+
+    /// Draw cube wires (Vector version)
+    fn draw_cube_wires_v(&mut self, position: Vector3, size: Vector3, color: Color) {
+        unsafe { ffi::DrawCubeWiresV(position.into(), size.into(), color.into()) }
+    }
+
+    /// Draw sphere
+    fn draw_sphere(&mut self, center_pos: Vector3, radius: f32, color: Color) {
+        unsafe { ffi::DrawSphere(center_pos.into(), radius, color.into()) }
+    }
+
+    /// Draw sphere with extended parameters
+    fn draw_sphere_ex(
+        &mut self,
+        center_pos: Vector3,
+        radius: f32,
+        rings: u32,
+        slices: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawSphereEx(
+                center_pos.into(),
+                radius,
+                rings as _,
+                slices as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw sphere wires
+    fn draw_sphere_wires(
+        &mut self,
+        center_pos: Vector3,
+        radius: f32,
+        rings: u32,
+        slices: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawSphereWires(
+                center_pos.into(),
+                radius,
+                rings as _,
+                slices as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a cylinder/cone
+    fn draw_cylinder(
+        &mut self,
+        position: Vector3,
+        radius_top: f32,
+        radius_bottom: f32,
+        height: f32,
+        slices: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCylinder(
+                position.into(),
+                radius_top,
+                radius_bottom,
+                height,
+                slices as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a cylinder with base at start_pos and top at end_pos
+    fn draw_cylinder_ex(
+        &mut self,
+        start_pos: Vector3,
+        end_pos: Vector3,
+        start_radius: f32,
+        end_radius: f32,
+        sides: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCylinderEx(
+                start_pos.into(),
+                end_pos.into(),
+                start_radius,
+                end_radius,
+                sides as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a cylinder/cone wires
+    fn draw_cylinder_wires(
+        &mut self,
+        position: Vector3,
+        radius_top: f32,
+        radius_bottom: f32,
+        height: f32,
+        slices: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCylinderWires(
+                position.into(),
+                radius_top,
+                radius_bottom,
+                height,
+                slices as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a cylinder wires with base at start_pos and top at end_pos
+    fn draw_cylinder_wires_ex(
+        &mut self,
+        start_pos: Vector3,
+        end_pos: Vector3,
+        start_radius: f32,
+        end_radius: f32,
+        sides: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCylinderWiresEx(
+                start_pos.into(),
+                end_pos.into(),
+                start_radius,
+                end_radius,
+                sides as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a capsule with the center of its sphere caps at start_pos and end_pos
+    fn draw_capsule(
+        &mut self,
+        start_pos: Vector3,
+        end_pos: Vector3,
+        radius: f32,
+        slices: u32,
+        rings: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCapsule(
+                start_pos.into(),
+                end_pos.into(),
+                radius,
+                slices as _,
+                rings as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw capsule wireframe with the center of its sphere caps at start_pos and end_pos
+    fn draw_capsule_wires(
+        &mut self,
+        start_pos: Vector3,
+        end_pos: Vector3,
+        radius: f32,
+        slices: u32,
+        rings: u32,
+        color: Color,
+    ) {
+        unsafe {
+            ffi::DrawCapsuleWires(
+                start_pos.into(),
+                end_pos.into(),
+                radius,
+                slices as _,
+                rings as _,
+                color.into(),
+            )
+        }
+    }
+
+    /// Draw a plane XZ
+    fn draw_plane(&mut self, center_pos: Vector3, size: Vector2, color: Color) {
+        unsafe { ffi::DrawPlane(center_pos.into(), size.into(), color.into()) }
+    }
+
+    /// Draw a ray line
+    fn draw_ray(&mut self, ray: Ray, color: Color) {
+        unsafe { ffi::DrawRay(ray.into(), color.into()) }
+    }
+
+    /// Draw a grid (centered at (0, 0, 0))
+    fn draw_grid(&mut self, slices: i32, spacing: f32) {
+        unsafe { ffi::DrawGrid(slices, spacing) }
+    }
+
+    /// Draw a model (with texture if set)
+    fn draw_model(&mut self, model: &Model, position: Vector3, scale: f32, tint: Color) {
+        unsafe { ffi::DrawModel(model.raw.clone(), position.into(), scale, tint.into()) }
+    }
+
+    /// Draw a model with extended parameters
+    fn draw_model_ex(
+        &mut self,
+        model: &Model,
+        position: Vector3,
+        rotation_axis: Vector3,
+        rotation_angle: f32,
+        scale: Vector3,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawModelEx(
+                model.raw.clone(),
+                position.into(),
+                rotation_axis.into(),
+                rotation_angle,
+                scale.into(),
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw a model wires (with texture if set)
+    fn draw_model_wires(&mut self, model: &Model, position: Vector3, scale: f32, tint: Color) {
+        unsafe { ffi::DrawModelWires(model.raw.clone(), position.into(), scale, tint.into()) }
+    }
+
+    /// Draw a model wires (with texture if set) with extended parameters
+    fn draw_model_wires_ex(
+        &mut self,
+        model: &Model,
+        position: Vector3,
+        rotation_axis: Vector3,
+        rotation_angle: f32,
+        scale: Vector3,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawModelWiresEx(
+                model.raw.clone(),
+                position.into(),
+                rotation_axis.into(),
+                rotation_angle,
+                scale.into(),
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw bounding box (wires)
+    fn draw_bounding_box(&mut self, bbox: BoundingBox, color: Color) {
+        unsafe { ffi::DrawBoundingBox(bbox.into(), color.into()) }
+    }
+
+    /// Draw a billboard texture
+    fn draw_billboard(
+        &mut self,
+        camera: Camera,
+        texture: Texture2D,
+        position: Vector3,
+        size: f32,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawBillboard(
+                camera.into(),
+                texture.raw.deref().clone(),
+                position.into(),
+                size,
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw a billboard texture defined by source
+    fn draw_billboard_rect(
+        &mut self,
+        camera: Camera,
+        texture: Texture2D,
+        source: Rectangle,
+        position: Vector3,
+        size: Vector2,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawBillboardRec(
+                camera.into(),
+                texture.raw.deref().clone(),
+                source.into(),
+                position.into(),
+                size.into(),
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw a billboard texture defined by source and rotation
+    fn draw_billboard_pro(
+        &mut self,
+        camera: Camera,
+        texture: Texture2D,
+        source: Rectangle,
+        position: Vector3,
+        up: Vector3,
+        size: Vector2,
+        origin: Vector2,
+        rotation: f32,
+        tint: Color,
+    ) {
+        unsafe {
+            ffi::DrawBillboardPro(
+                camera.into(),
+                texture.raw.deref().clone(),
+                source.into(),
+                position.into(),
+                up.into(),
+                size.into(),
+                origin.into(),
+                rotation,
+                tint.into(),
+            )
+        }
+    }
+
+    /// Draw a 3d mesh with material and transform
+    fn draw_mesh(&mut self, mesh: &Mesh, material: &Material, transform: Matrix) {
+        unsafe { ffi::DrawMesh(mesh.raw.clone(), material.raw.clone(), transform.into()) }
+    }
+
+    /// Draw multiple mesh instances with material and different transforms
+    fn draw_mesh_instanced(&mut self, mesh: &Mesh, material: &Material, transforms: &[Matrix]) {
+        unsafe { ffi::DrawMeshInstanced(mesh.raw.clone(), material.raw.clone(), transforms.as_ptr() as *const _, transforms.len() as _) }
     }
 }
 

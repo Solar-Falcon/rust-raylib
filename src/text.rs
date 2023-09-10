@@ -71,9 +71,8 @@ impl Font {
     /// Load font from Image (XNA style)
     #[inline]
     pub fn from_image(image: &Image, key_color: Color, first_char: char) -> Option<Self> {
-        let raw = unsafe {
-            ffi::LoadFontFromImage(image.raw.clone(), key_color.into(), first_char as _)
-        };
+        let raw =
+            unsafe { ffi::LoadFontFromImage(image.raw.clone(), key_color.into(), first_char as _) };
 
         if unsafe { ffi::IsFontReady(raw.clone()) } {
             Some(Self { raw: Rc::new(raw) })
@@ -84,7 +83,12 @@ impl Font {
 
     /// Load font from memory buffer, fileType refers to extension: i.e. '.ttf'
     #[inline]
-    pub fn from_memory(file_type: &str, file_data: &[u8], font_size: u32, chars: &[char]) -> Option<Self> {
+    pub fn from_memory(
+        file_type: &str,
+        file_data: &[u8],
+        font_size: u32,
+        chars: &[char],
+    ) -> Option<Self> {
         let file_type = CString::new(file_type).unwrap();
 
         let raw = unsafe {

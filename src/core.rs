@@ -32,7 +32,12 @@ impl Raylib {
 
     /// Initialize window and OpenGL context with config flags
     #[inline]
-    pub fn init_window_ex(width: u32, height: u32, title: &str, flags: ConfigFlags) -> Option<Self> {
+    pub fn init_window_ex(
+        width: u32,
+        height: u32,
+        title: &str,
+        flags: ConfigFlags,
+    ) -> Option<Self> {
         unsafe {
             ffi::SetConfigFlags(flags.bits());
         }
