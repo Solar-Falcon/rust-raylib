@@ -1,6 +1,10 @@
 use std::{ffi::CString, rc::Rc};
 
-use crate::{ffi, math::{BoundingBox, Vector3}, texture::{Image, Texture2D}};
+use crate::{
+    ffi,
+    math::{BoundingBox, Vector3},
+    texture::{Image, Texture2D},
+};
 
 pub use crate::ffi::MaterialMapIndex;
 
@@ -19,7 +23,15 @@ impl Mesh {
     /// Update mesh vertex data in GPU for a specific buffer index
     #[inline]
     pub fn update_buffer(&self, index: u32, data: &[u8], offset: u32) {
-        unsafe { ffi::UpdateMeshBuffer(self.raw.clone(), index as _, data.as_ptr() as *const _, data.len() as _, offset as _) }
+        unsafe {
+            ffi::UpdateMeshBuffer(
+                self.raw.clone(),
+                index as _,
+                data.as_ptr() as *const _,
+                data.len() as _,
+                offset as _,
+            )
+        }
     }
 
     /// Export mesh data to file, returns true on success
@@ -45,69 +57,89 @@ impl Mesh {
     /// Generate polygonal mesh
     #[inline]
     pub fn generate_polygon(sides: u32, radius: f32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshPoly(sides as _, radius) } }
+        Self {
+            raw: unsafe { ffi::GenMeshPoly(sides as _, radius) },
+        }
     }
 
     /// Generate plane mesh (with subdivisions)
     #[inline]
     pub fn generate_plane(width: f32, length: f32, res_x: u32, res_z: u32) -> Self {
         Self {
-            raw: unsafe { ffi::GenMeshPlane(width, length, res_x as _, res_z as _) }
+            raw: unsafe { ffi::GenMeshPlane(width, length, res_x as _, res_z as _) },
         }
     }
 
     /// Generate cuboid mesh
     #[inline]
     pub fn generate_cube(width: f32, height: f32, length: f32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshCube(width, height, length) } }
+        Self {
+            raw: unsafe { ffi::GenMeshCube(width, height, length) },
+        }
     }
 
     /// Generate sphere mesh (standard sphere)
     #[inline]
     pub fn generate_sphere(radius: f32, rings: u32, slices: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshSphere(radius, rings as _, slices as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshSphere(radius, rings as _, slices as _) },
+        }
     }
 
     /// Generate half-sphere mesh (no bottom cap)
     #[inline]
     pub fn generate_hemisphere(radius: f32, rings: u32, slices: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshHemiSphere(radius, rings as _, slices as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshHemiSphere(radius, rings as _, slices as _) },
+        }
     }
 
     /// Generate cylinder mesh
     #[inline]
     pub fn generate_cylinder(radius: f32, height: f32, slices: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshCylinder(radius, height, slices as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshCylinder(radius, height, slices as _) },
+        }
     }
 
     /// Generate cone/pyramid mesh
     #[inline]
     pub fn generate_cone(radius: f32, height: f32, slices: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshCone(radius, height, slices as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshCone(radius, height, slices as _) },
+        }
     }
 
     /// Generate torus mesh
     #[inline]
     pub fn generate_torus(radius: f32, size: f32, rad_seg: u32, sides: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshTorus(radius, size, rad_seg as _, sides as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshTorus(radius, size, rad_seg as _, sides as _) },
+        }
     }
 
     /// Generate trefoil knot mesh
     #[inline]
     pub fn generate_knot(radius: f32, size: f32, rad_seg: u32, sides: u32) -> Self {
-        Self { raw: unsafe { ffi::GenMeshKnot(radius, size, rad_seg as _, sides as _) } }
+        Self {
+            raw: unsafe { ffi::GenMeshKnot(radius, size, rad_seg as _, sides as _) },
+        }
     }
 
     /// Generate heightmap mesh from image data
     #[inline]
     pub fn generate_heightmap(heightmap: &Image, size: Vector3) -> Self {
-        Self { raw: unsafe { ffi::GenMeshHeightmap(heightmap.raw.clone(), size.into()) } }
+        Self {
+            raw: unsafe { ffi::GenMeshHeightmap(heightmap.raw.clone(), size.into()) },
+        }
     }
 
     /// Generate cubes-based map mesh from image data
     #[inline]
     pub fn generate_cubicmap(cubicmap: &Image, cube_size: Vector3) -> Self {
-        Self { raw: unsafe { ffi::GenMeshCubicmap(cubicmap.raw.clone(), cube_size.into()) } }
+        Self {
+            raw: unsafe { ffi::GenMeshCubicmap(cubicmap.raw.clone(), cube_size.into()) },
+        }
     }
 }
 
@@ -159,7 +191,9 @@ impl Model {
     /// Set material for a mesh
     #[inline]
     pub fn set_mesh_material(&mut self, mesh_id: u32, material_id: u32) {
-        unsafe { ffi::SetModelMeshMaterial(&mut self.raw as *mut _, mesh_id as _, material_id as _) }
+        unsafe {
+            ffi::SetModelMeshMaterial(&mut self.raw as *mut _, mesh_id as _, material_id as _)
+        }
     }
 
     /// Update model animation pose
@@ -184,7 +218,7 @@ impl Drop for Model {
 
 #[derive(Debug)]
 pub struct Material {
-    pub(crate) raw: ffi::Material
+    pub(crate) raw: ffi::Material,
 }
 
 impl Material {
@@ -210,7 +244,7 @@ impl Material {
     }
 
     /// Set texture for a material map type
-    /// 
+    ///
     /// Returns `true` on success (if `texture` has no clones)
     #[inline]
     pub fn set_texture(&mut self, map_type: MaterialMapIndex, texture: Texture2D) -> bool {
@@ -218,7 +252,13 @@ impl Material {
             let raw = texture.raw.clone();
             drop(texture);
 
-            unsafe { ffi::SetMaterialTexture(&mut self.raw as *mut _, map_type as _, Rc::into_inner(raw).unwrap()); }
+            unsafe {
+                ffi::SetMaterialTexture(
+                    &mut self.raw as *mut _,
+                    map_type as _,
+                    Rc::into_inner(raw).unwrap(),
+                );
+            }
 
             true
         } else {
@@ -230,7 +270,9 @@ impl Material {
 impl Default for Material {
     #[inline]
     fn default() -> Self {
-        Self { raw: unsafe { ffi::LoadMaterialDefault() } }
+        Self {
+            raw: unsafe { ffi::LoadMaterialDefault() },
+        }
     }
 }
 
@@ -243,7 +285,7 @@ impl Drop for Material {
 
 #[derive(Debug)]
 pub struct ModelAnimation {
-    raw: ffi::ModelAnimation
+    raw: ffi::ModelAnimation,
 }
 
 impl ModelAnimation {
@@ -258,10 +300,14 @@ impl ModelAnimation {
         let mut vec = Vec::new();
 
         for i in 0..(count as usize) {
-            vec.push(ModelAnimation { raw: unsafe { anims.add(i).read() } })
+            vec.push(ModelAnimation {
+                raw: unsafe { anims.add(i).read() },
+            })
         }
 
-        unsafe { ffi::UnloadModelAnimations(anims, count); }
+        unsafe {
+            ffi::UnloadModelAnimations(anims, count);
+        }
 
         vec
     }

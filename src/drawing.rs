@@ -1,8 +1,8 @@
 use crate::{
     color::Color,
     ffi,
-    math::{BoundingBox, Camera, Camera2D, Camera3D, Ray, Rectangle, Vector2, Vector3, Matrix},
-    model::{Model, Mesh, Material},
+    math::{BoundingBox, Camera, Camera2D, Camera3D, Matrix, Ray, Rectangle, Vector2, Vector3},
+    model::{Material, Mesh, Model},
     shader::Shader,
     text::Font,
     texture::{NPatchInfo, RenderTexture2D, Texture, Texture2D},
@@ -1349,7 +1349,14 @@ where
 
     /// Draw multiple mesh instances with material and different transforms
     fn draw_mesh_instanced(&mut self, mesh: &Mesh, material: &Material, transforms: &[Matrix]) {
-        unsafe { ffi::DrawMeshInstanced(mesh.raw.clone(), material.raw.clone(), transforms.as_ptr() as *const _, transforms.len() as _) }
+        unsafe {
+            ffi::DrawMeshInstanced(
+                mesh.raw.clone(),
+                material.raw.clone(),
+                transforms.as_ptr() as *const _,
+                transforms.len() as _,
+            )
+        }
     }
 }
 
