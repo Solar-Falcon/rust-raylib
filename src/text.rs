@@ -8,6 +8,7 @@ use std::{ffi::CString, ops::Deref, rc::Rc};
 
 pub use crate::ffi::FontType;
 
+/// Font, font texture and GlyphInfo array data
 #[derive(Clone, Debug)]
 pub struct Font {
     pub(crate) raw: Rc<ffi::Font>,
@@ -176,6 +177,8 @@ pub fn gen_image_font_atlas(
     padding: i32,
     skyline_pack: bool,
 ) -> (Image, Vec<Rectangle>) {
+    assert!(!chars.is_empty());
+
     let mut recs: *mut ffi::Rectangle = std::ptr::null_mut();
     let chars_ffi: Vec<_> = chars
         .iter()
@@ -235,6 +238,7 @@ impl GlyphInfo {
         font_chars: &[char],
         font_type: FontType,
     ) -> Vec<GlyphInfo> {
+        assert!(!font_chars.is_empty());
         let len = font_chars.len();
 
         let infos = unsafe {
@@ -242,11 +246,7 @@ impl GlyphInfo {
                 file_data.as_ptr(),
                 file_data.len() as _,
                 font_size as _,
-                if len != 0 {
-                    font_chars.as_ptr()
-                } else {
-                    std::ptr::null()
-                } as *mut _,
+                font_chars.as_ptr() as *mut _,
                 len as _,
                 font_type as _,
             )

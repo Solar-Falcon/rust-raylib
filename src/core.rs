@@ -521,7 +521,7 @@ impl Raylib {
     pub fn get_gamepad_name(&self, gamepad: u32) -> String {
         let name = unsafe { ffi::GetGamepadName(gamepad as _) };
 
-        if name != std::ptr::null() {
+        if name.is_null() {
             let name = unsafe { CStr::from_ptr(name) };
 
             name.to_string_lossy().into_owned()
