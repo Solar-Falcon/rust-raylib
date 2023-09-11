@@ -9,7 +9,11 @@ fn build_raylib() {
     let dest = cmake::Config::new("raylib")
         .define("BUILD_EXAMPLES", "OFF")
         .define("CMAKE_BUILD_TYPE", "Release")
-        .profile(if cfg!(debug_assertions) { "Debug" } else { "Release" })
+        .profile(if cfg!(debug_assertions) {
+            "Debug"
+        } else {
+            "Release"
+        })
         .build();
 
     println!(
