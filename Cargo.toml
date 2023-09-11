@@ -11,6 +11,9 @@ exclude = [
     "raylib/logo/*",
     "raylib/projects/*"
 ]
+documentation = "https://docs.rs/rust-raylib"
+homepage = "https://github.com/Solar-Falcon/rust-raylib"
+repository = "https://github.com/Solar-Falcon/rust-raylib"
 build = "build/main.rs"
 
 [dependencies]
