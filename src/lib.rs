@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 /// Raw ffi bindings
 pub mod ffi;
 

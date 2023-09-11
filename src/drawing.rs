@@ -225,6 +225,12 @@ pub trait Draw
 where
     Self: Sized,
 {
+    /// Set background color (framebuffer clear color)
+    #[inline]
+    fn clear_background(&mut self, color: Color) {
+        unsafe { ffi::ClearBackground(color.into()) }
+    }
+
     /// Begin 2D mode with custom camera (2D)
     #[inline]
     fn begin_mode_2d(&mut self, camera: Camera2D) -> DrawMode2D<Self> {

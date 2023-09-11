@@ -8,6 +8,7 @@ use crate::{
 
 pub use crate::ffi::MaterialMapIndex;
 
+/// Mesh, vertex data and vao/vbo
 #[derive(Debug)]
 pub struct Mesh {
     pub(crate) raw: ffi::Mesh,
@@ -150,6 +151,7 @@ impl Drop for Mesh {
     }
 }
 
+/// Model, meshes, materials and animation data
 #[derive(Debug)]
 pub struct Model {
     pub(crate) raw: ffi::Model,
@@ -216,6 +218,7 @@ impl Drop for Model {
     }
 }
 
+/// Material, includes shader and maps
 #[derive(Debug)]
 pub struct Material {
     pub(crate) raw: ffi::Material,
@@ -245,7 +248,7 @@ impl Material {
 
     /// Set texture for a material map type
     ///
-    /// Returns `true` on success (if `texture` has no clones)
+    /// Returns `true` on success (if `texture` hasn't been cloned or all of them have been dropped, i.e. if its the underlying `Rc` has only 1 strong reference)
     #[inline]
     pub fn set_texture(&mut self, map_type: MaterialMapIndex, texture: Texture2D) -> bool {
         if Rc::strong_count(&texture.raw) == 1 {
@@ -283,6 +286,7 @@ impl Drop for Material {
     }
 }
 
+/// Model animation
 #[derive(Debug)]
 pub struct ModelAnimation {
     raw: ffi::ModelAnimation,

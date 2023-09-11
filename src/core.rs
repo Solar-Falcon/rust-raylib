@@ -1,4 +1,4 @@
-use crate::{color::Color, drawing::DrawHandle, ffi, math::Vector2, texture::Image};
+use crate::{drawing::DrawHandle, ffi, math::Vector2, texture::Image};
 
 use std::{
     ffi::{CStr, CString},
@@ -380,12 +380,6 @@ impl Raylib {
     #[inline]
     pub fn is_cursor_on_screen(&self) -> bool {
         unsafe { ffi::IsCursorOnScreen() }
-    }
-
-    /// Set background color (framebuffer clear color)
-    #[inline]
-    pub fn clear_background(&mut self, color: Color) {
-        unsafe { ffi::ClearBackground(color.into()) }
     }
 
     /// Set target FPS (maximum)
