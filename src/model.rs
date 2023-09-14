@@ -142,6 +142,16 @@ impl Mesh {
             raw: unsafe { ffi::GenMeshCubicmap(cubicmap.raw.clone(), cube_size.into()) },
         }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Mesh {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Mesh {
+        &mut self.raw
+    }
 }
 
 impl Drop for Mesh {
@@ -209,6 +219,16 @@ impl Model {
     pub fn is_animation_valid(&self, anim: &ModelAnimation) -> bool {
         unsafe { ffi::IsModelAnimationValid(self.raw.clone(), anim.raw.clone()) }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Model {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Model {
+        &mut self.raw
+    }
 }
 
 impl Drop for Model {
@@ -268,6 +288,16 @@ impl Material {
             false
         }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Material {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Material {
+        &mut self.raw
+    }
 }
 
 impl Default for Material {
@@ -314,6 +344,16 @@ impl ModelAnimation {
         }
 
         vec
+    }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::ModelAnimation {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::ModelAnimation {
+        &mut self.raw
     }
 }
 

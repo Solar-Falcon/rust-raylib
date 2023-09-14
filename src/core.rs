@@ -189,8 +189,8 @@ impl Raylib {
 
     /// Get native window handle
     #[inline]
-    pub unsafe fn get_window_handle(&self) -> *mut core::ffi::c_void {
-        ffi::GetWindowHandle()
+    pub fn get_window_handle(&self) -> *mut core::ffi::c_void {
+        unsafe { ffi::GetWindowHandle() }
     }
 
     /// Get current screen width

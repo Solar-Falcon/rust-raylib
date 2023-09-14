@@ -137,6 +137,16 @@ impl Shader {
             )
         }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Shader {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Shader> {
+        Rc::get_mut(&mut self.raw)
+    }
 }
 
 impl Drop for Shader {

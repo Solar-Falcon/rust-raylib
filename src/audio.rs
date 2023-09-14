@@ -148,6 +148,16 @@ impl Wave {
 
         vec
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Wave {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Wave {
+        &mut self.raw
+    }
 }
 
 impl Clone for Wave {
@@ -274,6 +284,16 @@ impl AudioStream {
     pub fn set_default_buffer_size(size: usize) {
         unsafe { ffi::SetAudioStreamBufferSizeDefault(size as _) }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::AudioStream {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::AudioStream {
+        &mut self.raw
+    }
 }
 
 impl Drop for AudioStream {
@@ -380,6 +400,16 @@ impl Sound {
     #[inline]
     pub fn set_pan(&self, pan: f32, _device: &mut AudioDevice) {
         unsafe { ffi::SetSoundPan(self.raw.clone(), pan) }
+    }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Sound {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Sound {
+        &mut self.raw
     }
 }
 
@@ -514,6 +544,16 @@ impl Music {
     #[inline]
     pub fn get_time_played(&self, _device: &mut AudioDevice) -> Duration {
         Duration::from_secs_f32(unsafe { ffi::GetMusicTimePlayed(self.raw.clone()) })
+    }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Music {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Music {
+        &mut self.raw
     }
 }
 

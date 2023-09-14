@@ -162,6 +162,16 @@ impl Font {
             },
         }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Font {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Font> {
+        Rc::get_mut(&mut self.raw)
+    }
 }
 
 impl Default for Font {

@@ -776,6 +776,16 @@ impl Image {
     fn as_mut_ptr(&mut self) -> *mut ffi::Image {
         (&mut self.raw) as *mut ffi::Image
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Image {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> &mut ffi::Image {
+        &mut self.raw
+    }
 }
 
 impl Clone for Image {
@@ -932,6 +942,16 @@ impl Texture {
     pub fn set_wrap(&mut self, wrap: TextureWrap) {
         unsafe { ffi::SetTextureWrap(self.raw.deref().clone(), wrap as _) }
     }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::Texture {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Texture> {
+        Rc::get_mut(&mut self.raw)
+    }
 }
 
 impl Drop for Texture {
@@ -972,6 +992,16 @@ impl RenderTexture {
         } else {
             None
         }
+    }
+
+    #[inline]
+    pub fn to_raw(&self) -> &ffi::RenderTexture {
+        &self.raw
+    }
+
+    #[inline]
+    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::RenderTexture> {
+        Rc::get_mut(&mut self.raw)
     }
 }
 
