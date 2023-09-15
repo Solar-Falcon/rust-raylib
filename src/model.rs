@@ -144,12 +144,12 @@ impl Mesh {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Mesh {
+    pub fn as_raw(&self) -> &ffi::Mesh {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Mesh {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Mesh {
         &mut self.raw
     }
 }
@@ -221,12 +221,12 @@ impl Model {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Model {
+    pub fn as_raw(&self) -> &ffi::Model {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Model {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Model {
         &mut self.raw
     }
 }
@@ -290,12 +290,12 @@ impl Material {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Material {
+    pub fn as_raw(&self) -> &ffi::Material {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Material {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Material {
         &mut self.raw
     }
 }
@@ -347,12 +347,12 @@ impl ModelAnimation {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::ModelAnimation {
+    pub fn as_raw(&self) -> &ffi::ModelAnimation {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::ModelAnimation {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::ModelAnimation {
         &mut self.raw
     }
 }

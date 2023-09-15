@@ -164,12 +164,12 @@ impl Font {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Font {
+    pub fn as_raw(&self) -> &ffi::Font {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Font> {
+    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Font> {
         Rc::get_mut(&mut self.raw)
     }
 }

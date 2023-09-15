@@ -150,12 +150,12 @@ impl Wave {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Wave {
+    pub fn as_raw(&self) -> &ffi::Wave {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Wave {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Wave {
         &mut self.raw
     }
 }
@@ -286,12 +286,12 @@ impl AudioStream {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::AudioStream {
+    pub fn as_raw(&self) -> &ffi::AudioStream {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::AudioStream {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::AudioStream {
         &mut self.raw
     }
 }
@@ -403,12 +403,12 @@ impl Sound {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Sound {
+    pub fn as_raw(&self) -> &ffi::Sound {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Sound {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Sound {
         &mut self.raw
     }
 }
@@ -547,12 +547,12 @@ impl Music {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Music {
+    pub fn as_raw(&self) -> &ffi::Music {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Music {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Music {
         &mut self.raw
     }
 }

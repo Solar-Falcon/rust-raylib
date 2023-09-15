@@ -778,12 +778,12 @@ impl Image {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Image {
+    pub fn as_raw(&self) -> &ffi::Image {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> &mut ffi::Image {
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Image {
         &mut self.raw
     }
 }
@@ -944,12 +944,12 @@ impl Texture {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Texture {
+    pub fn as_raw(&self) -> &ffi::Texture {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Texture> {
+    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Texture> {
         Rc::get_mut(&mut self.raw)
     }
 }
@@ -995,12 +995,12 @@ impl RenderTexture {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::RenderTexture {
+    pub fn as_raw(&self) -> &ffi::RenderTexture {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::RenderTexture> {
+    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::RenderTexture> {
         Rc::get_mut(&mut self.raw)
     }
 }

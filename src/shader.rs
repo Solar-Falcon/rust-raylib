@@ -139,12 +139,12 @@ impl Shader {
     }
 
     #[inline]
-    pub fn to_raw(&self) -> &ffi::Shader {
+    pub fn as_raw(&self) -> &ffi::Shader {
         &self.raw
     }
 
     #[inline]
-    pub fn to_raw_mut(&mut self) -> Option<&mut ffi::Shader> {
+    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Shader> {
         Rc::get_mut(&mut self.raw)
     }
 }
