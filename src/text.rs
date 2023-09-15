@@ -4,14 +4,14 @@ use crate::{
     math::{Rectangle, Vector2},
     texture::Image,
 };
-use std::{ffi::CString, ops::Deref, rc::Rc};
+use std::ffi::CString;
 
 pub use crate::ffi::FontType;
 
 /// Font, font texture and GlyphInfo array data
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Font {
-    pub(crate) raw: Rc<ffi::Font>,
+    pub(crate) raw: ffi::Font,
 }
 
 impl Font {
@@ -41,7 +41,7 @@ impl Font {
         let raw = unsafe { ffi::LoadFont(file_name.as_ptr()) };
 
         if unsafe { ffi::IsFontReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -62,7 +62,7 @@ impl Font {
         };
 
         if unsafe { ffi::IsFontReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -75,7 +75,7 @@ impl Font {
             unsafe { ffi::LoadFontFromImage(image.raw.clone(), key_color.into(), first_char as _) };
 
         if unsafe { ffi::IsFontReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -103,7 +103,7 @@ impl Font {
         };
 
         if unsafe { ffi::IsFontReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -114,7 +114,7 @@ impl Font {
     pub fn export_as_code(&self, file_name: &str) -> bool {
         let file_name = CString::new(file_name).unwrap();
 
-        unsafe { ffi::ExportFontAsCode(self.raw.deref().clone(), file_name.as_ptr()) }
+        unsafe { ffi::ExportFontAsCode(self.raw.clone(), file_name.as_ptr()) }
     }
 
     /// Measure string width for default font
@@ -131,26 +131,26 @@ impl Font {
         let text = CString::new(text).unwrap();
 
         unsafe {
-            ffi::MeasureTextEx(self.raw.deref().clone(), text.as_ptr(), font_size, spacing).into()
+            ffi::MeasureTextEx(self.raw.clone(), text.as_ptr(), font_size, spacing).into()
         }
     }
 
     /// Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found
     #[inline]
     pub fn get_glyph_index(&self, codepoint: char) -> usize {
-        unsafe { ffi::GetGlyphIndex(self.raw.deref().clone(), codepoint as _) as _ }
+        unsafe { ffi::GetGlyphIndex(self.raw.clone(), codepoint as _) as _ }
     }
 
     /// Get glyph rectangle in font atlas for a codepoint (unicode character), fallback to '?' if not found
     #[inline]
     pub fn get_glyph_atlas_rect(&self, codepoint: char) -> Rectangle {
-        unsafe { ffi::GetGlyphAtlasRec(self.raw.deref().clone(), codepoint as _).into() }
+        unsafe { ffi::GetGlyphAtlasRec(self.raw.clone(), codepoint as _).into() }
     }
 
     /// Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
     #[inline]
     pub fn get_glyph_info(&self, codepoint: char) -> GlyphInfo {
-        let info = unsafe { ffi::GetGlyphInfo(self.raw.deref().clone(), codepoint as _) };
+        let info = unsafe { ffi::GetGlyphInfo(self.raw.clone(), codepoint as _) };
 
         GlyphInfo {
             value: char::from_u32(info.value as _).unwrap(),
@@ -169,8 +169,13 @@ impl Font {
     }
 
     #[inline]
-    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Font> {
-        Rc::get_mut(&mut self.raw)
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Font {
+        &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Font) -> Self {
+        Self { raw }
     }
 }
 
@@ -179,7 +184,7 @@ impl Default for Font {
     #[inline]
     fn default() -> Self {
         Self {
-            raw: Rc::new(unsafe { ffi::GetFontDefault() }),
+            raw: unsafe { ffi::GetFontDefault() },
         }
     }
 }
@@ -187,9 +192,7 @@ impl Default for Font {
 impl Drop for Font {
     #[inline]
     fn drop(&mut self) {
-        if Rc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadFont(self.raw.deref().clone()) }
-        }
+        unsafe { ffi::UnloadFont(self.raw.clone()) }
     }
 }
 

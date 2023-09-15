@@ -39,7 +39,7 @@ impl<'a> Drop for DrawHandle<'a> {
     }
 }
 
-pub struct DrawMode2D<'a, T>(&'a mut T, Camera2D);
+pub struct DrawMode2D<'a, T>(&'a mut T);
 
 impl<'a, T> DrawMode2D<'a, T> {
     /// Ends 2D mode with custom camera
@@ -65,7 +65,7 @@ impl<'a, T> Drop for DrawMode2D<'a, T> {
     }
 }
 
-pub struct DrawMode3D<'a, T>(&'a mut T, Camera3D);
+pub struct DrawMode3D<'a, T>(&'a mut T);
 
 impl<'a, T> DrawMode3D<'a, T> {
     /// Ends 3D mode and returns to default 2D orthographic mode
@@ -91,7 +91,7 @@ impl<'a, T> Drop for DrawMode3D<'a, T> {
     }
 }
 
-pub struct DrawTextureMode<'a, T>(&'a mut T, RenderTexture2D);
+pub struct DrawTextureMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawTextureMode<'a, T> {
     /// Ends drawing to render texture
@@ -117,7 +117,7 @@ impl<'a, T> Drop for DrawTextureMode<'a, T> {
     }
 }
 
-pub struct DrawShaderMode<'a, T>(&'a mut T, Shader);
+pub struct DrawShaderMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawShaderMode<'a, T> {
     /// End custom shader drawing (use default shader)
@@ -143,7 +143,7 @@ impl<'a, T> Drop for DrawShaderMode<'a, T> {
     }
 }
 
-pub struct DrawBlendMode<'a, T>(&'a mut T, BlendMode);
+pub struct DrawBlendMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawTextureMode<'a, T> {
     /// End blending mode (reset to default: alpha blending)
@@ -169,7 +169,7 @@ impl<'a, T> Drop for DrawBlendMode<'a, T> {
     }
 }
 
-pub struct DrawScissorMode<'a, T>(&'a mut T, [u32; 4]);
+pub struct DrawScissorMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawScissorMode<'a, T> {
     /// End scissor mode
@@ -195,7 +195,7 @@ impl<'a, T> Drop for DrawScissorMode<'a, T> {
     }
 }
 
-pub struct DrawVrStereoMode<'a, T>(&'a mut T, &'a VrStereoConfig);
+pub struct DrawVrStereoMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawVrStereoMode<'a, T> {
     /// End stereo rendering (requires VR simulator)
@@ -235,40 +235,40 @@ where
     #[inline]
     fn begin_mode_2d(&mut self, camera: Camera2D) -> DrawMode2D<Self> {
         unsafe {
-            ffi::BeginMode2D(camera.clone().into());
+            ffi::BeginMode2D(camera.into());
         }
 
-        DrawMode2D(self, camera)
+        DrawMode2D(self)
     }
 
     /// Begin 3D mode with custom camera (3D)
     #[inline]
     fn begin_mode_3d(&mut self, camera: Camera3D) -> DrawMode3D<Self> {
         unsafe {
-            ffi::BeginMode3D(camera.clone().into());
+            ffi::BeginMode3D(camera.into());
         }
 
-        DrawMode3D(self, camera)
+        DrawMode3D(self)
     }
 
     /// Begin drawing to render texture
     #[inline]
-    fn begin_texture_mode(&mut self, target: RenderTexture2D) -> DrawTextureMode<Self> {
+    fn begin_texture_mode(&mut self, target: &RenderTexture2D) -> DrawTextureMode<Self> {
         unsafe {
-            ffi::BeginTextureMode(target.raw.deref().clone());
+            ffi::BeginTextureMode(target.raw.clone());
         }
 
-        DrawTextureMode(self, target)
+        DrawTextureMode(self)
     }
 
     /// Begin custom shader drawing
     #[inline]
-    fn begin_shader_mode(&mut self, shader: Shader) -> DrawShaderMode<Self> {
+    fn begin_shader_mode(&mut self, shader: &Shader) -> DrawShaderMode<Self> {
         unsafe {
-            ffi::BeginShaderMode(shader.raw.deref().clone());
+            ffi::BeginShaderMode(shader.raw.clone());
         }
 
-        DrawShaderMode(self, shader)
+        DrawShaderMode(self)
     }
 
     /// Begin blending mode (alpha, additive, multiplied, subtract, custom)
@@ -278,7 +278,7 @@ where
             ffi::BeginBlendMode(mode as _);
         }
 
-        DrawBlendMode(self, mode)
+        DrawBlendMode(self)
     }
 
     /// Begin scissor mode (define screen area for following drawing)
@@ -294,39 +294,39 @@ where
             ffi::BeginScissorMode(x as _, y as _, width as _, height as _);
         }
 
-        DrawScissorMode(self, [x, y, width, height])
+        DrawScissorMode(self)
     }
 
     /// Begin stereo rendering (requires VR simulator)
     #[inline]
-    fn begin_vr_stereo_mode<'s, 'v: 's>(
-        &'s mut self,
-        config: &'v VrStereoConfig,
+    fn begin_vr_stereo_mode(
+        &mut self,
+        config: VrStereoConfig,
     ) -> DrawVrStereoMode<Self> {
         unsafe {
-            ffi::BeginVrStereoMode(config.clone().into());
+            ffi::BeginVrStereoMode(config.into());
         }
 
-        DrawVrStereoMode(self, config)
+        DrawVrStereoMode(self)
     }
 
     /// Draw a Texture2D
     #[inline]
-    fn draw_texture(&mut self, tex: Texture, x: i32, y: i32, tint: Color) {
-        unsafe { ffi::DrawTexture(tex.raw.deref().clone(), x, y, tint.into()) }
+    fn draw_texture(&mut self, tex: &Texture, x: i32, y: i32, tint: Color) {
+        unsafe { ffi::DrawTexture(tex.raw.clone(), x, y, tint.into()) }
     }
 
     /// Draw a Texture2D with position defined as Vector2
     #[inline]
-    fn draw_texture_v(&mut self, tex: Texture, pos: Vector2, tint: Color) {
-        unsafe { ffi::DrawTextureV(tex.raw.deref().clone(), pos.into(), tint.into()) }
+    fn draw_texture_v(&mut self, tex: &Texture, pos: Vector2, tint: Color) {
+        unsafe { ffi::DrawTextureV(tex.raw.clone(), pos.into(), tint.into()) }
     }
 
     /// Draw a Texture2D with extended parameters
     #[inline]
     fn draw_texture_ex(
         &mut self,
-        tex: Texture,
+        tex: &Texture,
         pos: Vector2,
         rotation: f32,
         scale: f32,
@@ -334,7 +334,7 @@ where
     ) {
         unsafe {
             ffi::DrawTextureEx(
-                tex.raw.deref().clone(),
+                tex.raw.clone(),
                 pos.into(),
                 rotation,
                 scale,
@@ -345,11 +345,11 @@ where
 
     /// Draw a part of a texture defined by a rectangle
     #[inline]
-    fn draw_texture_rect(&mut self, tex: Texture, source: Rectangle, pos: Vector2, tint: Color) {
+    fn draw_texture_rect(&mut self, tex: &Texture, source: Rectangle, pos: Vector2, tint: Color) {
         // rectangle checks?
         unsafe {
             ffi::DrawTextureRec(
-                tex.raw.deref().clone(),
+                tex.raw.clone(),
                 source.into(),
                 pos.into(),
                 tint.into(),
@@ -361,7 +361,7 @@ where
     #[inline]
     fn draw_texture_pro(
         &mut self,
-        tex: Texture,
+        tex: &Texture,
         source: Rectangle,
         dest: Rectangle,
         origin: Vector2,
@@ -371,7 +371,7 @@ where
         // rectangle checks?
         unsafe {
             ffi::DrawTexturePro(
-                tex.raw.deref().clone(),
+                tex.raw.clone(),
                 source.into(),
                 dest.into(),
                 origin.into(),
@@ -385,7 +385,7 @@ where
     #[inline]
     fn draw_texture_patch(
         &mut self,
-        tex: Texture,
+        tex: &Texture,
         patch_info: NPatchInfo,
         dest: Rectangle,
         origin: Vector2,
@@ -394,7 +394,7 @@ where
     ) {
         unsafe {
             ffi::DrawTextureNPatch(
-                tex.raw.deref().clone(),
+                tex.raw.clone(),
                 patch_info.into(),
                 dest.into(),
                 origin.into(),
@@ -406,8 +406,8 @@ where
 
     /// Set texture and rectangle to be used on shapes drawing
     #[inline]
-    fn set_shapes_texture(&mut self, texture: Texture, source: Rectangle) {
-        unsafe { ffi::SetShapesTexture(texture.raw.deref().clone(), source.into()) }
+    fn set_shapes_texture(&mut self, texture: &Texture, source: Rectangle) {
+        unsafe { ffi::SetShapesTexture(texture.raw.clone(), source.into()) }
     }
 
     /// Draw a pixel
@@ -881,7 +881,7 @@ where
 
         unsafe {
             ffi::DrawTextEx(
-                font.raw.deref().clone(),
+                font.raw.clone(),
                 text.as_ptr(),
                 pos.into(),
                 font_size,
@@ -908,7 +908,7 @@ where
 
         unsafe {
             ffi::DrawTextPro(
-                font.raw.deref().clone(),
+                font.raw.clone(),
                 text.as_ptr(),
                 pos.into(),
                 origin.into(),
@@ -925,7 +925,7 @@ where
     fn draw_char(&mut self, font: &Font, ch: char, pos: Vector2, font_size: f32, tint: Color) {
         unsafe {
             ffi::DrawTextCodepoint(
-                font.raw.deref().clone(),
+                font.raw.clone(),
                 ch as _,
                 pos.into(),
                 font_size,
@@ -947,7 +947,7 @@ where
     ) {
         unsafe {
             ffi::DrawTextCodepoints(
-                font.raw.deref().clone(),
+                font.raw.clone(),
                 chars.as_ptr() as *const _,
                 chars.len() as _,
                 pos.into(),
@@ -1282,7 +1282,7 @@ where
     fn draw_billboard(
         &mut self,
         camera: Camera,
-        texture: Texture2D,
+        texture: &Texture2D,
         position: Vector3,
         size: f32,
         tint: Color,
@@ -1290,7 +1290,7 @@ where
         unsafe {
             ffi::DrawBillboard(
                 camera.into(),
-                texture.raw.deref().clone(),
+                texture.raw.clone(),
                 position.into(),
                 size,
                 tint.into(),
@@ -1302,7 +1302,7 @@ where
     fn draw_billboard_rect(
         &mut self,
         camera: Camera,
-        texture: Texture2D,
+        texture: &Texture2D,
         source: Rectangle,
         position: Vector3,
         size: Vector2,
@@ -1311,7 +1311,7 @@ where
         unsafe {
             ffi::DrawBillboardRec(
                 camera.into(),
-                texture.raw.deref().clone(),
+                texture.raw.clone(),
                 source.into(),
                 position.into(),
                 size.into(),
@@ -1324,7 +1324,7 @@ where
     fn draw_billboard_pro(
         &mut self,
         camera: Camera,
-        texture: Texture2D,
+        texture: &Texture2D,
         source: Rectangle,
         position: Vector3,
         up: Vector3,
@@ -1336,7 +1336,7 @@ where
         unsafe {
             ffi::DrawBillboardPro(
                 camera.into(),
-                texture.raw.deref().clone(),
+                texture.raw.clone(),
                 source.into(),
                 position.into(),
                 up.into(),

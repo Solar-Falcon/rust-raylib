@@ -2,7 +2,6 @@
 
 /// Raw ffi bindings
 pub mod ffi;
-
 pub use ffi::{RAYLIB_VERSION, RAYLIB_VERSION_MAJOR, RAYLIB_VERSION_MINOR, RAYLIB_VERSION_PATCH};
 
 /// Audio

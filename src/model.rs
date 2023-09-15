@@ -1,9 +1,9 @@
-use std::{ffi::CString, rc::Rc};
+use std::{ffi::CString, mem::ManuallyDrop};
 
 use crate::{
     ffi,
-    math::{BoundingBox, Vector3},
-    texture::{Image, Texture2D},
+    math::{BoundingBox, Vector3, Vector4, Vector2, Matrix, Transform},
+    texture::{Image, Texture2D}, color::Color,
 };
 
 pub use crate::ffi::MaterialMapIndex;
@@ -15,6 +15,118 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    /// Vertex positions (XYZ - 3 components per vertex) (shader-location = 0)
+    #[inline]
+    pub fn vertices(&self) -> &[Vector3] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.vertices as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex positions (XYZ - 3 components per vertex) (shader-location = 0)
+    #[inline]
+    pub fn vertices_mut(&mut self) -> &mut [Vector3] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.vertices as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex texture coordinates (UV - 2 components per vertex) (shader-location = 1)
+    #[inline]
+    pub fn texcoords(&self) -> &[Vector2] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.texcoords as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex texture coordinates (UV - 2 components per vertex) (shader-location = 1)
+    #[inline]
+    pub fn texcoords_mut(&mut self) -> &mut [Vector2] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.texcoords as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex texture second coordinates (UV - 2 components per vertex) (shader-location = 5)
+    #[inline]
+    pub fn texcoords2(&self) -> &[Vector2] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.texcoords as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex texture second coordinates (UV - 2 components per vertex) (shader-location = 5)
+    #[inline]
+    pub fn texcoords2_mut(&mut self) -> &mut [Vector2] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.texcoords as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex normals (XYZ - 3 components per vertex) (shader-location = 2)
+    #[inline]
+    pub fn normals(&self) -> &[Vector3] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.normals as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex normals (XYZ - 3 components per vertex) (shader-location = 2)
+    #[inline]
+    pub fn normals_mut(&mut self) -> &mut [Vector3] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.normals as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex tangents (XYZW - 4 components per vertex) (shader-location = 4)
+    #[inline]
+    pub fn tangents(&self) -> &[Vector4] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.tangents as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex tangents (XYZW - 4 components per vertex) (shader-location = 4)
+    #[inline]
+    pub fn tangents_mut(&mut self) -> &mut [Vector4] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.tangents as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex colors (RGBA - 4 components per vertex) (shader-location = 3)
+    #[inline]
+    pub fn colors(&self) -> &[Color] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.colors as *const _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex colors (RGBA - 4 components per vertex) (shader-location = 3)
+    #[inline]
+    pub fn colors_mut(&mut self) -> &mut [Color] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.colors as *mut _, self.raw.vertexCount as _)
+        }
+    }
+
+    /// Vertex indices (in case vertex data comes indexed)
+    #[inline]
+    pub fn indices(&self) -> &[u16] {
+        unsafe {
+            std::slice::from_raw_parts(self.raw.indices as *const _, self.raw.triangleCount as _)
+        }
+    }
+
+    /// Vertex indices (in case vertex data comes indexed)
+    #[inline]
+    pub fn indices_mut(&mut self) -> &mut [u16] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.indices as *mut _, self.raw.triangleCount as _)
+        }
+    }
+
     /// Upload mesh vertex data in GPU and provide VAO/VBO ids
     #[inline]
     pub fn upload(&mut self, dynamic: bool) {
@@ -152,6 +264,11 @@ impl Mesh {
     pub fn as_raw_mut(&mut self) -> &mut ffi::Mesh {
         &mut self.raw
     }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Mesh) -> Self {
+        Self { raw }
+    }
 }
 
 impl Drop for Mesh {
@@ -168,6 +285,66 @@ pub struct Model {
 }
 
 impl Model {
+	/// Local transform matrix
+    #[inline]
+    pub fn transform(&self) -> Matrix {
+        self.raw.transform.clone().into()
+    }
+    
+	/// Local transform matrix
+    #[inline]
+    pub fn set_transform(&mut self, mat: Matrix) {
+        self.raw.transform = mat.into();
+    }
+
+	/// Meshes array
+    #[inline]
+    pub fn meshes(&self) -> &[ffi::Mesh] {
+        unsafe { std::slice::from_raw_parts(self.raw.meshes as *const _, self.raw.meshCount as _) }
+    }
+
+    /// Meshes array
+    #[inline]
+    pub fn meshes_mut(&mut self) -> &mut [ffi::Mesh] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.meshes, self.raw.meshCount as _) }
+    }
+
+	/// Materials array
+    #[inline]
+    pub fn materials(&self) -> &[ffi::Material] {
+        unsafe { std::slice::from_raw_parts(self.raw.materials as *const _, self.raw.materialCount as _) }
+    }
+
+	/// Materials array
+    #[inline]
+    pub fn materials_mut(&mut self) -> &mut [ffi::Material] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.materials, self.raw.materialCount as _) }
+    }
+
+    /// Bones information (skeleton)
+    #[inline]
+    pub fn bones(&self) -> &[ffi::BoneInfo] {
+        unsafe { std::slice::from_raw_parts(self.raw.bones as *const _, self.raw.boneCount as _) }
+    }
+
+	/// Bones information (skeleton)
+    #[inline]
+    pub fn bones_mut(&mut self) -> &mut [ffi::BoneInfo] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.bones, self.raw.boneCount as _) }
+    }
+
+	/// Bones base transformation (pose)
+    #[inline]
+    pub fn bind_pose(&self) -> &[ffi::Transform] {
+        unsafe { std::slice::from_raw_parts(self.raw.bindPose as *const _, self.raw.boneCount as _) }
+    }
+
+	/// Bones base transformation (pose)
+    #[inline]
+    pub fn bind_pose_mut(&mut self) -> &mut [ffi::Transform] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.bindPose, self.raw.boneCount as _) }
+    }
+
     /// Load model from files (meshes and materials)
     #[inline]
     pub fn from_file(file_name: &str) -> Option<Self> {
@@ -185,12 +362,10 @@ impl Model {
     /// Load model from generated mesh (default material)
     #[inline]
     pub fn from_mesh(mesh: Mesh) -> Self {
-        let raw_mesh = mesh.raw.clone();
-        // LoadModelFromMesh 'takes ownership' of the mesh
-        std::mem::forget(mesh);
+        let mesh = ManuallyDrop::new(mesh);
 
         Self {
-            raw: unsafe { ffi::LoadModelFromMesh(raw_mesh) },
+            raw: unsafe { ffi::LoadModelFromMesh(mesh.raw.clone()) },
         }
     }
 
@@ -229,6 +404,11 @@ impl Model {
     pub fn as_raw_mut(&mut self) -> &mut ffi::Model {
         &mut self.raw
     }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Model) -> Self {
+        Self { raw }
+    }
 }
 
 impl Drop for Model {
@@ -245,6 +425,42 @@ pub struct Material {
 }
 
 impl Material {
+	/// Material shader
+    #[inline]
+    pub fn shader(&self) -> &ffi::Shader {
+        &self.raw.shader
+    }
+
+    /// Material shader
+    #[inline]
+    pub fn shader_mut(&mut self) -> &mut ffi::Shader {
+        &mut self.raw.shader
+    }
+
+    /// Material maps array
+    #[inline]
+    pub fn maps(&self) -> &[ffi::MaterialMap] {
+        unsafe { std::slice::from_raw_parts(self.raw.maps as *const _, ffi::MAX_MATERIAL_MAPS) }
+    }
+
+    /// Material maps array
+    #[inline]
+    pub fn maps_mut(&mut self) -> &mut [ffi::MaterialMap] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.maps, ffi::MAX_MATERIAL_MAPS) }
+    }
+
+    /// Material generic parameters (if required)
+    #[inline]
+    pub fn params(&self) -> &[f32; 4] {
+        &self.raw.params
+    }
+
+    /// Material generic parameters (if required)
+    #[inline]
+    pub fn params_mut(&mut self) -> &mut [f32; 4] {
+        &mut self.raw.params
+    }
+
     /// Load materials from model file
     #[inline]
     pub fn from_file(file_name: &str) -> Vec<Self> {
@@ -267,25 +483,16 @@ impl Material {
     }
 
     /// Set texture for a material map type
-    ///
-    /// Returns `true` on success (if `texture` hasn't been cloned or all of them have been dropped, i.e. if its the underlying `Rc` has only 1 strong reference)
     #[inline]
-    pub fn set_texture(&mut self, map_type: MaterialMapIndex, texture: Texture2D) -> bool {
-        if Rc::strong_count(&texture.raw) == 1 {
-            let raw = texture.raw.clone();
-            drop(texture);
+    pub fn set_texture(&mut self, map_type: MaterialMapIndex, texture: Texture2D) {
+        let texture = ManuallyDrop::new(texture);
 
-            unsafe {
-                ffi::SetMaterialTexture(
-                    &mut self.raw as *mut _,
-                    map_type as _,
-                    Rc::into_inner(raw).unwrap(),
-                );
-            }
-
-            true
-        } else {
-            false
+        unsafe {
+            ffi::SetMaterialTexture(
+                &mut self.raw as *mut _,
+                map_type as _,
+                texture.raw.clone(),
+            );
         }
     }
 
@@ -297,6 +504,11 @@ impl Material {
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Material {
         &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Material) -> Self {
+        Self { raw }
     }
 }
 
@@ -323,6 +535,42 @@ pub struct ModelAnimation {
 }
 
 impl ModelAnimation {
+    /// Bones information (skeleton)
+    #[inline]
+    pub fn bones(&self) -> &[ffi::BoneInfo] {
+        unsafe { std::slice::from_raw_parts(self.raw.bones as *const _, self.raw.boneCount as _) }
+    }
+
+	/// Bones information (skeleton)
+    #[inline]
+    pub fn bones_mut(&mut self) -> &mut [ffi::BoneInfo] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.bones, self.raw.boneCount as _) }
+    }
+
+	/// Poses array by frame
+    #[inline]
+    pub fn frame_poses(&self) -> Vec<&[Transform]> {
+        let mut vec = Vec::new();
+
+        for i in 0..(self.raw.frameCount as usize) {
+            vec.push(unsafe { std::slice::from_raw_parts(self.raw.framePoses.add(i).read() as *const _, self.raw.boneCount as _) })
+        }
+
+        vec
+    }
+
+	/// Poses array by frame
+    #[inline]
+    pub fn frame_poses_mut(&mut self) -> Vec<&mut [Transform]> {
+        let mut vec = Vec::new();
+
+        for i in 0..(self.raw.frameCount as usize) {
+            vec.push(unsafe { std::slice::from_raw_parts_mut(self.raw.framePoses.add(i).read() as *mut _, self.raw.boneCount as _) })
+        }
+
+        vec
+    }
+    
     /// Load model animations from file
     #[inline]
     pub fn from_file(file_name: &str) -> Vec<Self> {
@@ -354,6 +602,11 @@ impl ModelAnimation {
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::ModelAnimation {
         &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::ModelAnimation) -> Self {
+        Self { raw }
     }
 }
 

@@ -146,7 +146,7 @@ impl From<ffi::Rectangle> for Rectangle {
 
 /// Ray, ray for raycasting
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Ray {
     /// Ray position (origin)
     pub position: Vector3,
@@ -173,7 +173,7 @@ impl From<ffi::Ray> for Ray {
 
 /// RayCollision, ray hit information
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RayCollision {
     /// Did the ray hit something?
     pub hit: bool,
@@ -204,7 +204,7 @@ impl From<ffi::RayCollision> for RayCollision {
 
 /// BoundingBox
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BoundingBox {
     /// Minimum vertex box-corner
     pub min: Vector3,
@@ -225,6 +225,35 @@ impl From<BoundingBox> for ffi::BoundingBox {
 impl From<ffi::BoundingBox> for BoundingBox {
     #[inline]
     fn from(value: ffi::BoundingBox) -> Self {
+        unsafe { transmute(value) }
+    }
+}
+
+/// Transform, vertex transformation data
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Transform {
+	/// Translation
+	pub translation: Vector3,
+	/// Rotation
+	pub rotation: Quaternion,
+	/// Scale
+	pub scale: Vector3,
+}
+
+assert_eq_size!(Transform, ffi::Transform);
+assert_eq_align!(Transform, ffi::Transform);
+
+impl From<Transform> for ffi::Transform {
+    #[inline]
+    fn from(val: Transform) -> Self {
+        unsafe { transmute(val) }
+    }
+}
+
+impl From<ffi::Transform> for Transform {
+    #[inline]
+    fn from(value: ffi::Transform) -> Self {
         unsafe { transmute(value) }
     }
 }

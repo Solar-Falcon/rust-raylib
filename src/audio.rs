@@ -158,6 +158,11 @@ impl Wave {
     pub fn as_raw_mut(&mut self) -> &mut ffi::Wave {
         &mut self.raw
     }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Wave) -> Self {
+        Self { raw }
+    }
 }
 
 impl Clone for Wave {
@@ -294,6 +299,11 @@ impl AudioStream {
     pub fn as_raw_mut(&mut self) -> &mut ffi::AudioStream {
         &mut self.raw
     }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::AudioStream) -> Self {
+        Self { raw }
+    }
 }
 
 impl Drop for AudioStream {
@@ -410,6 +420,11 @@ impl Sound {
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Sound {
         &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Sound) -> Self {
+        Self { raw }
     }
 }
 
@@ -554,6 +569,11 @@ impl Music {
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Music {
         &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Music) -> Self {
+        Self { raw }
     }
 }
 

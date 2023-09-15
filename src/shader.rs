@@ -3,15 +3,15 @@ use crate::{
     math::{Matrix, Vector2, Vector3, Vector4},
     texture::Texture2D,
 };
-use std::{ffi::CString, ops::Deref, rc::Rc};
+use std::ffi::CString;
 
 pub use crate::ffi::{ShaderAttributeDataType, ShaderLocationIndex, ShaderUniformDataType};
 
 /// Shader
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Shader {
-    pub(crate) raw: Rc<ffi::Shader>,
+    pub(crate) raw: ffi::Shader,
 }
 
 impl Shader {
@@ -20,6 +20,14 @@ impl Shader {
     pub fn locations(&self) -> &[u32] {
         unsafe {
             std::slice::from_raw_parts(self.raw.locs as *const u32, ffi::MAX_SHADER_LOCATIONS)
+        }
+    }
+
+    /// Shader locations array
+    #[inline]
+    pub fn locations_mut(&mut self) -> &mut [u32] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.locs as *mut _, ffi::MAX_SHADER_LOCATIONS)
         }
     }
 
@@ -43,7 +51,7 @@ impl Shader {
         };
 
         if unsafe { ffi::IsShaderReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -69,7 +77,7 @@ impl Shader {
         };
 
         if unsafe { ffi::IsShaderReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -80,7 +88,7 @@ impl Shader {
     pub fn get_location(&self, uniform_name: &str) -> u32 {
         let uniform_name = CString::new(uniform_name).unwrap();
 
-        unsafe { ffi::GetShaderLocation(self.raw.deref().clone(), uniform_name.as_ptr()) as _ }
+        unsafe { ffi::GetShaderLocation(self.raw.clone(), uniform_name.as_ptr()) as _ }
     }
 
     /// Get shader attribute location
@@ -89,7 +97,7 @@ impl Shader {
         let attribute_name = CString::new(attribute_name).unwrap();
 
         unsafe {
-            ffi::GetShaderLocationAttrib(self.raw.deref().clone(), attribute_name.as_ptr()) as _
+            ffi::GetShaderLocationAttrib(self.raw.clone(), attribute_name.as_ptr()) as _
         }
     }
 
@@ -98,7 +106,7 @@ impl Shader {
     pub fn set_value<S: ShaderValue>(&mut self, loc_index: u32, value: S) {
         unsafe {
             ffi::SetShaderValue(
-                self.raw.deref().clone(),
+                self.raw.clone(),
                 loc_index as _,
                 value.raw_value(),
                 S::UNIFORM_TYPE as _,
@@ -111,7 +119,7 @@ impl Shader {
     pub fn set_value_vec<S: ShaderValue>(&mut self, loc_index: u32, values: &[S]) {
         unsafe {
             ffi::SetShaderValueV(
-                self.raw.deref().clone(),
+                self.raw.clone(),
                 loc_index as _,
                 values.as_ptr() as *const _,
                 S::UNIFORM_TYPE as _,
@@ -123,7 +131,7 @@ impl Shader {
     /// Set shader uniform value (matrix 4x4)
     #[inline]
     pub fn set_value_matrix(&mut self, loc_index: u32, mat: Matrix) {
-        unsafe { ffi::SetShaderValueMatrix(self.raw.deref().clone(), loc_index as _, mat.into()) }
+        unsafe { ffi::SetShaderValueMatrix(self.raw.clone(), loc_index as _, mat.into()) }
     }
 
     /// Set shader uniform value for texture (sampler2d)
@@ -131,9 +139,9 @@ impl Shader {
     pub fn set_value_texture(&mut self, loc_index: u32, texture: &Texture2D) {
         unsafe {
             ffi::SetShaderValueTexture(
-                self.raw.deref().clone(),
+                self.raw.clone(),
                 loc_index as _,
-                texture.raw.deref().clone(),
+                texture.raw.clone(),
             )
         }
     }
@@ -144,17 +152,20 @@ impl Shader {
     }
 
     #[inline]
-    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Shader> {
-        Rc::get_mut(&mut self.raw)
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Shader {
+        &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Shader) -> Self {
+        Self { raw }
     }
 }
 
 impl Drop for Shader {
     #[inline]
     fn drop(&mut self) {
-        if Rc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadShader(self.raw.deref().clone()) }
-        }
+        unsafe { ffi::UnloadShader(self.raw.clone()) }
     }
 }
 

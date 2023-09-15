@@ -6,7 +6,7 @@ use crate::{
     text::Font,
 };
 
-use std::{ffi::CString, ops::Deref, rc::Rc};
+use std::ffi::CString;
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
@@ -162,7 +162,7 @@ impl Image {
     /// Load image from GPU texture data
     #[inline]
     pub fn from_texture(texture: &Texture) -> Option<Self> {
-        let raw = unsafe { ffi::LoadImageFromTexture(texture.raw.deref().clone()) };
+        let raw = unsafe { ffi::LoadImageFromTexture(texture.raw.clone()) };
 
         if unsafe { ffi::IsImageReady(raw.clone()) } {
             Some(Self { raw })
@@ -346,7 +346,7 @@ impl Image {
         Self {
             raw: unsafe {
                 ffi::ImageTextEx(
-                    font.raw.deref().clone(),
+                    font.raw.clone(),
                     text.as_ptr(),
                     font_size,
                     spacing,
@@ -750,7 +750,7 @@ impl Image {
         unsafe {
             ffi::ImageDrawTextEx(
                 self.as_mut_ptr(),
-                font.raw.deref().clone(),
+                font.raw.clone(),
                 text.as_ptr(),
                 pos.into(),
                 font_size,
@@ -786,6 +786,11 @@ impl Image {
     pub fn as_raw_mut(&mut self) -> &mut ffi::Image {
         &mut self.raw
     }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Image) -> Self {
+        Self { raw }
+    }
 }
 
 impl Clone for Image {
@@ -805,9 +810,9 @@ impl Drop for Image {
 }
 
 /// Texture, tex data stored in GPU memory (VRAM)
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Texture {
-    pub(crate) raw: Rc<ffi::Texture>,
+    pub(crate) raw: ffi::Texture,
 }
 
 impl Texture {
@@ -843,7 +848,7 @@ impl Texture {
         let raw = unsafe { ffi::LoadTexture(file_name.as_ptr()) };
 
         if unsafe { ffi::IsTextureReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -855,7 +860,7 @@ impl Texture {
         let raw = unsafe { ffi::LoadTextureFromImage(image.raw.clone()) };
 
         if unsafe { ffi::IsTextureReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -867,7 +872,7 @@ impl Texture {
         let raw = unsafe { ffi::LoadTextureCubemap(image.raw.clone(), layout as _) };
 
         if unsafe { ffi::IsTextureReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -880,7 +885,7 @@ impl Texture {
     pub fn update(&mut self, pixels: &[u8]) -> bool {
         if pixels.len() == self.get_pixel_data_size() {
             unsafe {
-                ffi::UpdateTexture(self.raw.deref().clone(), pixels.as_ptr() as *const _);
+                ffi::UpdateTexture(self.raw.clone(), pixels.as_ptr() as *const _);
             }
             true
         } else {
@@ -901,7 +906,7 @@ impl Texture {
         {
             unsafe {
                 ffi::UpdateTextureRec(
-                    self.raw.deref().clone(),
+                    self.raw.clone(),
                     rect.into(),
                     pixels.as_ptr() as *const _,
                 );
@@ -920,27 +925,22 @@ impl Texture {
 
     /// Generate GPU mipmaps for a texture
     #[inline]
-    pub fn generate_mipmaps(&mut self) -> bool {
-        if let Some(texture) = Rc::get_mut(&mut self.raw) {
-            unsafe {
-                ffi::GenTextureMipmaps(texture as *mut _);
-            }
-            true
-        } else {
-            false
+    pub fn generate_mipmaps(&mut self) {
+        unsafe {
+            ffi::GenTextureMipmaps(&mut self.raw as *mut _);
         }
     }
 
     /// Set texture scaling filter mode
     #[inline]
     pub fn set_filter(&mut self, filter: TextureFilter) {
-        unsafe { ffi::SetTextureFilter(self.raw.deref().clone(), filter as _) }
+        unsafe { ffi::SetTextureFilter(self.raw.clone(), filter as _) }
     }
 
     /// Set texture wrapping mode
     #[inline]
     pub fn set_wrap(&mut self, wrap: TextureWrap) {
-        unsafe { ffi::SetTextureWrap(self.raw.deref().clone(), wrap as _) }
+        unsafe { ffi::SetTextureWrap(self.raw.clone(), wrap as _) }
     }
 
     #[inline]
@@ -949,24 +949,27 @@ impl Texture {
     }
 
     #[inline]
-    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::Texture> {
-        Rc::get_mut(&mut self.raw)
+    pub fn as_raw_mut(&mut self) -> &mut ffi::Texture {
+        &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::Texture) -> Self {
+        Self { raw }
     }
 }
 
 impl Drop for Texture {
     #[inline]
     fn drop(&mut self) {
-        if Rc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadTexture(self.raw.deref().clone()) }
-        }
+        unsafe { ffi::UnloadTexture(self.raw.clone()) }
     }
 }
 
 /// RenderTexture, fbo for texture rendering
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct RenderTexture {
-    pub(crate) raw: Rc<ffi::RenderTexture>,
+    pub(crate) raw: ffi::RenderTexture,
 }
 
 impl RenderTexture {
@@ -988,7 +991,7 @@ impl RenderTexture {
         let raw = unsafe { ffi::LoadRenderTexture(width as _, height as _) };
 
         if unsafe { ffi::IsRenderTextureReady(raw.clone()) } {
-            Some(Self { raw: Rc::new(raw) })
+            Some(Self { raw })
         } else {
             None
         }
@@ -1000,17 +1003,20 @@ impl RenderTexture {
     }
 
     #[inline]
-    pub fn as_raw_mut(&mut self) -> Option<&mut ffi::RenderTexture> {
-        Rc::get_mut(&mut self.raw)
+    pub fn as_raw_mut(&mut self) -> &mut ffi::RenderTexture {
+        &mut self.raw
+    }
+
+    #[inline]
+    pub unsafe fn from_raw(raw: ffi::RenderTexture) -> Self {
+        Self { raw }
     }
 }
 
 impl Drop for RenderTexture {
     #[inline]
     fn drop(&mut self) {
-        if Rc::strong_count(&self.raw) == 1 {
-            unsafe { ffi::UnloadRenderTexture(self.raw.deref().clone()) }
-        }
+        unsafe { ffi::UnloadRenderTexture(self.raw.clone()) }
     }
 }
 
