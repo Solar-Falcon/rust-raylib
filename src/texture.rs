@@ -55,6 +55,7 @@ impl From<ffi::NPatchInfo> for NPatchInfo {
 
 /// Image, pixel data stored in CPU memory (RAM)
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Image {
     pub(crate) raw: ffi::Image,
 }
@@ -777,16 +778,25 @@ impl Image {
         (&mut self.raw) as *mut ffi::Image
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Image {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Image {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Image) -> Self {
         Self { raw }
@@ -811,6 +821,7 @@ impl Drop for Image {
 
 /// Texture, tex data stored in GPU memory (VRAM)
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Texture {
     pub(crate) raw: ffi::Texture,
 }
@@ -943,16 +954,25 @@ impl Texture {
         unsafe { ffi::SetTextureWrap(self.raw.clone(), wrap as _) }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Texture {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Texture {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Texture) -> Self {
         Self { raw }
@@ -968,6 +988,7 @@ impl Drop for Texture {
 
 /// RenderTexture, fbo for texture rendering
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct RenderTexture {
     pub(crate) raw: ffi::RenderTexture,
 }
@@ -997,16 +1018,25 @@ impl RenderTexture {
         }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::RenderTexture {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::RenderTexture {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::RenderTexture) -> Self {
         Self { raw }

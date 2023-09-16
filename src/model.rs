@@ -1,15 +1,18 @@
 use std::{ffi::CString, mem::ManuallyDrop};
 
+use static_assertions::{assert_eq_size, assert_eq_align};
+
 use crate::{
     ffi,
     math::{BoundingBox, Vector3, Vector4, Vector2, Matrix, Transform},
-    texture::{Image, Texture2D}, color::Color,
+    texture::{Image, Texture2D}, color::Color, shader::Shader,
 };
 
 pub use crate::ffi::MaterialMapIndex;
 
 /// Mesh, vertex data and vao/vbo
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Mesh {
     pub(crate) raw: ffi::Mesh,
 }
@@ -255,16 +258,25 @@ impl Mesh {
         }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Mesh {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Mesh {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Mesh) -> Self {
         Self { raw }
@@ -280,6 +292,7 @@ impl Drop for Mesh {
 
 /// Model, meshes, materials and animation data
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Model {
     pub(crate) raw: ffi::Model,
 }
@@ -299,26 +312,26 @@ impl Model {
 
 	/// Meshes array
     #[inline]
-    pub fn meshes(&self) -> &[ffi::Mesh] {
+    pub fn meshes(&self) -> &[ManuallyDrop<Mesh>] {
         unsafe { std::slice::from_raw_parts(self.raw.meshes as *const _, self.raw.meshCount as _) }
     }
 
     /// Meshes array
     #[inline]
-    pub fn meshes_mut(&mut self) -> &mut [ffi::Mesh] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.meshes, self.raw.meshCount as _) }
+    pub fn meshes_mut(&mut self) -> &mut [ManuallyDrop<Mesh>] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.meshes as *mut _, self.raw.meshCount as _) }
     }
 
 	/// Materials array
     #[inline]
-    pub fn materials(&self) -> &[ffi::Material] {
+    pub fn materials(&self) -> &[ManuallyDrop<Material>] {
         unsafe { std::slice::from_raw_parts(self.raw.materials as *const _, self.raw.materialCount as _) }
     }
 
 	/// Materials array
     #[inline]
-    pub fn materials_mut(&mut self) -> &mut [ffi::Material] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.materials, self.raw.materialCount as _) }
+    pub fn materials_mut(&mut self) -> &mut [ManuallyDrop<Material>] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.materials as *mut _, self.raw.materialCount as _) }
     }
 
     /// Bones information (skeleton)
@@ -335,14 +348,14 @@ impl Model {
 
 	/// Bones base transformation (pose)
     #[inline]
-    pub fn bind_pose(&self) -> &[ffi::Transform] {
+    pub fn bind_pose(&self) -> &[Transform] {
         unsafe { std::slice::from_raw_parts(self.raw.bindPose as *const _, self.raw.boneCount as _) }
     }
 
 	/// Bones base transformation (pose)
     #[inline]
-    pub fn bind_pose_mut(&mut self) -> &mut [ffi::Transform] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.bindPose, self.raw.boneCount as _) }
+    pub fn bind_pose_mut(&mut self) -> &mut [Transform] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.bindPose as *mut _, self.raw.boneCount as _) }
     }
 
     /// Load model from files (meshes and materials)
@@ -395,16 +408,25 @@ impl Model {
         unsafe { ffi::IsModelAnimationValid(self.raw.clone(), anim.raw.clone()) }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Model {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Model {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Model) -> Self {
         Self { raw }
@@ -418,8 +440,24 @@ impl Drop for Model {
     }
 }
 
+/// Material map
+#[repr(C)]
+#[derive(Debug)]
+pub struct MaterialMap {
+	/// Material map texture
+	pub texture: ManuallyDrop<Texture2D>,
+	/// Material map color
+	pub color: Color,
+	/// Material map value
+	pub value: f32,
+}
+
+assert_eq_size!(MaterialMap, ffi::MaterialMap);
+assert_eq_align!(MaterialMap, ffi::MaterialMap);
+
 /// Material, includes shader and maps
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Material {
     pub(crate) raw: ffi::Material,
 }
@@ -427,26 +465,26 @@ pub struct Material {
 impl Material {
 	/// Material shader
     #[inline]
-    pub fn shader(&self) -> &ffi::Shader {
-        &self.raw.shader
+    pub fn shader(&self) -> &ManuallyDrop<Shader> {
+        unsafe { std::mem::transmute(&self.raw.shader) }
     }
 
     /// Material shader
     #[inline]
-    pub fn shader_mut(&mut self) -> &mut ffi::Shader {
-        &mut self.raw.shader
+    pub fn shader_mut(&mut self) -> &mut ManuallyDrop<Shader> {
+        unsafe { std::mem::transmute(&mut self.raw.shader) }
     }
 
     /// Material maps array
     #[inline]
-    pub fn maps(&self) -> &[ffi::MaterialMap] {
+    pub fn maps(&self) -> &[MaterialMap] {
         unsafe { std::slice::from_raw_parts(self.raw.maps as *const _, ffi::MAX_MATERIAL_MAPS) }
     }
 
     /// Material maps array
     #[inline]
-    pub fn maps_mut(&mut self) -> &mut [ffi::MaterialMap] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.maps, ffi::MAX_MATERIAL_MAPS) }
+    pub fn maps_mut(&mut self) -> &mut [MaterialMap] {
+        unsafe { std::slice::from_raw_parts_mut(self.raw.maps as *mut _, ffi::MAX_MATERIAL_MAPS) }
     }
 
     /// Material generic parameters (if required)
@@ -496,16 +534,25 @@ impl Material {
         }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Material {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Material {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Material) -> Self {
         Self { raw }
@@ -530,6 +577,7 @@ impl Drop for Material {
 
 /// Model animation
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct ModelAnimation {
     raw: ffi::ModelAnimation,
 }
@@ -594,16 +642,25 @@ impl ModelAnimation {
         vec
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::ModelAnimation {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::ModelAnimation {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::ModelAnimation) -> Self {
         Self { raw }

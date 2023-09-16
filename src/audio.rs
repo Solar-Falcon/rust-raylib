@@ -2,6 +2,7 @@ use std::{ffi::CString, time::Duration};
 
 use crate::ffi;
 
+/// An object that handles audio playback
 #[derive(Debug)]
 pub struct AudioDevice(());
 
@@ -36,6 +37,7 @@ impl Drop for AudioDevice {
 
 /// Wave, audio wave data
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Wave {
     raw: ffi::Wave,
 }
@@ -149,16 +151,25 @@ impl Wave {
         vec
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Wave {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Wave {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Wave) -> Self {
         Self { raw }
@@ -183,6 +194,7 @@ impl Drop for Wave {
 
 /// AudioStream, custom audio stream
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct AudioStream {
     raw: ffi::AudioStream,
 }
@@ -290,16 +302,25 @@ impl AudioStream {
         unsafe { ffi::SetAudioStreamBufferSizeDefault(size as _) }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::AudioStream {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::AudioStream {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::AudioStream) -> Self {
         Self { raw }
@@ -315,6 +336,7 @@ impl Drop for AudioStream {
 
 /// Sound
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Sound {
     raw: ffi::Sound,
 }
@@ -412,16 +434,25 @@ impl Sound {
         unsafe { ffi::SetSoundPan(self.raw.clone(), pan) }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Sound {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Sound {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Sound) -> Self {
         Self { raw }
@@ -437,6 +468,7 @@ impl Drop for Sound {
 
 /// Music, audio stream, anything longer than ~10 seconds should be streamed
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Music {
     raw: ffi::Music,
 }
@@ -561,16 +593,25 @@ impl Music {
         Duration::from_secs_f32(unsafe { ffi::GetMusicTimePlayed(self.raw.clone()) })
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Music {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Music {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Music) -> Self {
         Self { raw }

@@ -10,6 +10,7 @@ pub use crate::ffi::FontType;
 
 /// Font, font texture and GlyphInfo array data
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Font {
     pub(crate) raw: ffi::Font,
 }
@@ -163,16 +164,25 @@ impl Font {
         }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Font {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Font {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Font) -> Self {
         Self { raw }

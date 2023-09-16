@@ -14,6 +14,7 @@ use std::{ffi::CString, ops::Deref};
 
 pub use crate::ffi::BlendMode;
 
+/// An object that handles drawing
 pub struct DrawHandle<'a>(pub(crate) &'a mut Raylib);
 
 impl<'a> DrawHandle<'a> {
@@ -39,6 +40,7 @@ impl<'a> Drop for DrawHandle<'a> {
     }
 }
 
+/// An object that handles drawing with a custom 2D camera
 pub struct DrawMode2D<'a, T>(&'a mut T);
 
 impl<'a, T> DrawMode2D<'a, T> {
@@ -65,6 +67,7 @@ impl<'a, T> Drop for DrawMode2D<'a, T> {
     }
 }
 
+/// An object that handles drawing with a custom 3D camera
 pub struct DrawMode3D<'a, T>(&'a mut T);
 
 impl<'a, T> DrawMode3D<'a, T> {
@@ -91,6 +94,7 @@ impl<'a, T> Drop for DrawMode3D<'a, T> {
     }
 }
 
+/// An object that handles drawing onto a `RenderTexture`
 pub struct DrawTextureMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawTextureMode<'a, T> {
@@ -117,6 +121,7 @@ impl<'a, T> Drop for DrawTextureMode<'a, T> {
     }
 }
 
+/// An object that handles drawing with a custom shader
 pub struct DrawShaderMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawShaderMode<'a, T> {
@@ -143,6 +148,7 @@ impl<'a, T> Drop for DrawShaderMode<'a, T> {
     }
 }
 
+/// An object that handles drawing with a custom blend mode
 pub struct DrawBlendMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawTextureMode<'a, T> {
@@ -169,6 +175,7 @@ impl<'a, T> Drop for DrawBlendMode<'a, T> {
     }
 }
 
+/// An object that handles drawing within a screen area
 pub struct DrawScissorMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawScissorMode<'a, T> {
@@ -195,6 +202,7 @@ impl<'a, T> Drop for DrawScissorMode<'a, T> {
     }
 }
 
+/// An object that handles stereo drawing (VR)
 pub struct DrawVrStereoMode<'a, T>(&'a mut T);
 
 impl<'a, T> DrawVrStereoMode<'a, T> {
@@ -221,6 +229,7 @@ impl<'a, T> Drop for DrawVrStereoMode<'a, T> {
     }
 }
 
+/// A trait that contains all the drawing functions 
 pub trait Draw
 where
     Self: Sized,
@@ -601,6 +610,7 @@ where
 
     /// Draw ring
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     fn draw_ring(
         &mut self,
         center: Vector2,
@@ -626,6 +636,7 @@ where
 
     /// Draw ring outline
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     fn draw_ring_lines(
         &mut self,
         center: Vector2,
@@ -893,6 +904,7 @@ where
 
     /// Draw text using Font and pro parameters (rotation)
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     fn draw_text_pro(
         &mut self,
         font: &Font,
@@ -959,16 +971,19 @@ where
     }
 
     /// Draw a line in 3D world space
+    #[inline]
     fn draw_line_3d(&mut self, start_pos: Vector3, end_pos: Vector3, color: Color) {
         unsafe { ffi::DrawLine3D(start_pos.into(), end_pos.into(), color.into()) }
     }
 
     /// Draw a point in 3D space, actually a small line
+    #[inline]
     fn draw_point_3d(&mut self, position: Vector3, color: Color) {
         unsafe { ffi::DrawPoint3D(position.into(), color.into()) }
     }
 
     /// Draw a circle in 3D world space
+    #[inline]
     fn draw_circle_3d(
         &mut self,
         center: Vector3,
@@ -989,11 +1004,13 @@ where
     }
 
     /// Draw a color-filled triangle (vertex in counter-clockwise order!)
+    #[inline]
     fn draw_triangle_3d(&mut self, v1: Vector3, v2: Vector3, v3: Vector3, color: Color) {
         unsafe { ffi::DrawTriangle3D(v1.into(), v2.into(), v3.into(), color.into()) }
     }
 
     /// Draw a triangle strip defined by points
+    #[inline]
     fn draw_triangle_strip_3d(&mut self, points: &[Vector3], color: Color) {
         unsafe {
             ffi::DrawTriangleStrip3D(points.as_ptr() as *mut _, points.len() as _, color.into())
@@ -1001,16 +1018,19 @@ where
     }
 
     /// Draw cube
+    #[inline]
     fn draw_cube(&mut self, position: Vector3, width: f32, height: f32, length: f32, color: Color) {
         unsafe { ffi::DrawCube(position.into(), width, height, length, color.into()) }
     }
 
     /// Draw cube (Vector version)
+    #[inline]
     fn draw_cube_v(&mut self, position: Vector3, size: Vector3, color: Color) {
         unsafe { ffi::DrawCubeV(position.into(), size.into(), color.into()) }
     }
 
     /// Draw cube wires
+    #[inline]
     fn draw_cube_wires(
         &mut self,
         position: Vector3,
@@ -1023,16 +1043,19 @@ where
     }
 
     /// Draw cube wires (Vector version)
+    #[inline]
     fn draw_cube_wires_v(&mut self, position: Vector3, size: Vector3, color: Color) {
         unsafe { ffi::DrawCubeWiresV(position.into(), size.into(), color.into()) }
     }
 
     /// Draw sphere
+    #[inline]
     fn draw_sphere(&mut self, center_pos: Vector3, radius: f32, color: Color) {
         unsafe { ffi::DrawSphere(center_pos.into(), radius, color.into()) }
     }
 
     /// Draw sphere with extended parameters
+    #[inline]
     fn draw_sphere_ex(
         &mut self,
         center_pos: Vector3,
@@ -1053,6 +1076,7 @@ where
     }
 
     /// Draw sphere wires
+    #[inline]
     fn draw_sphere_wires(
         &mut self,
         center_pos: Vector3,
@@ -1073,6 +1097,7 @@ where
     }
 
     /// Draw a cylinder/cone
+    #[inline]
     fn draw_cylinder(
         &mut self,
         position: Vector3,
@@ -1095,6 +1120,7 @@ where
     }
 
     /// Draw a cylinder with base at start_pos and top at end_pos
+    #[inline]
     fn draw_cylinder_ex(
         &mut self,
         start_pos: Vector3,
@@ -1117,6 +1143,7 @@ where
     }
 
     /// Draw a cylinder/cone wires
+    #[inline]
     fn draw_cylinder_wires(
         &mut self,
         position: Vector3,
@@ -1139,6 +1166,7 @@ where
     }
 
     /// Draw a cylinder wires with base at start_pos and top at end_pos
+    #[inline]
     fn draw_cylinder_wires_ex(
         &mut self,
         start_pos: Vector3,
@@ -1161,6 +1189,7 @@ where
     }
 
     /// Draw a capsule with the center of its sphere caps at start_pos and end_pos
+    #[inline]
     fn draw_capsule(
         &mut self,
         start_pos: Vector3,
@@ -1183,6 +1212,7 @@ where
     }
 
     /// Draw capsule wireframe with the center of its sphere caps at start_pos and end_pos
+    #[inline]
     fn draw_capsule_wires(
         &mut self,
         start_pos: Vector3,
@@ -1205,26 +1235,31 @@ where
     }
 
     /// Draw a plane XZ
+    #[inline]
     fn draw_plane(&mut self, center_pos: Vector3, size: Vector2, color: Color) {
         unsafe { ffi::DrawPlane(center_pos.into(), size.into(), color.into()) }
     }
 
     /// Draw a ray line
+    #[inline]
     fn draw_ray(&mut self, ray: Ray, color: Color) {
         unsafe { ffi::DrawRay(ray.into(), color.into()) }
     }
 
     /// Draw a grid (centered at (0, 0, 0))
+    #[inline]
     fn draw_grid(&mut self, slices: i32, spacing: f32) {
         unsafe { ffi::DrawGrid(slices, spacing) }
     }
 
     /// Draw a model (with texture if set)
+    #[inline]
     fn draw_model(&mut self, model: &Model, position: Vector3, scale: f32, tint: Color) {
         unsafe { ffi::DrawModel(model.raw.clone(), position.into(), scale, tint.into()) }
     }
 
     /// Draw a model with extended parameters
+    #[inline]
     fn draw_model_ex(
         &mut self,
         model: &Model,
@@ -1247,11 +1282,13 @@ where
     }
 
     /// Draw a model wires (with texture if set)
+    #[inline]
     fn draw_model_wires(&mut self, model: &Model, position: Vector3, scale: f32, tint: Color) {
         unsafe { ffi::DrawModelWires(model.raw.clone(), position.into(), scale, tint.into()) }
     }
 
     /// Draw a model wires (with texture if set) with extended parameters
+    #[inline]
     fn draw_model_wires_ex(
         &mut self,
         model: &Model,
@@ -1274,11 +1311,13 @@ where
     }
 
     /// Draw bounding box (wires)
+    #[inline]
     fn draw_bounding_box(&mut self, bbox: BoundingBox, color: Color) {
         unsafe { ffi::DrawBoundingBox(bbox.into(), color.into()) }
     }
 
     /// Draw a billboard texture
+    #[inline]
     fn draw_billboard(
         &mut self,
         camera: Camera,
@@ -1299,6 +1338,7 @@ where
     }
 
     /// Draw a billboard texture defined by source
+    #[inline]
     fn draw_billboard_rect(
         &mut self,
         camera: Camera,
@@ -1321,6 +1361,8 @@ where
     }
 
     /// Draw a billboard texture defined by source and rotation
+    #[allow(clippy::too_many_arguments)]
+    #[inline]
     fn draw_billboard_pro(
         &mut self,
         camera: Camera,
@@ -1349,11 +1391,13 @@ where
     }
 
     /// Draw a 3d mesh with material and transform
+    #[inline]
     fn draw_mesh(&mut self, mesh: &Mesh, material: &Material, transform: Matrix) {
         unsafe { ffi::DrawMesh(mesh.raw.clone(), material.raw.clone(), transform.into()) }
     }
 
     /// Draw multiple mesh instances with material and different transforms
+    #[inline]
     fn draw_mesh_instanced(&mut self, mesh: &Mesh, material: &Material, transforms: &[Matrix]) {
         unsafe {
             ffi::DrawMeshInstanced(

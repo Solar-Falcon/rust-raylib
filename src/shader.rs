@@ -8,8 +8,8 @@ use std::ffi::CString;
 pub use crate::ffi::{ShaderAttributeDataType, ShaderLocationIndex, ShaderUniformDataType};
 
 /// Shader
-#[repr(C)]
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Shader {
     pub(crate) raw: ffi::Shader,
 }
@@ -146,16 +146,25 @@ impl Shader {
         }
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw(&self) -> &ffi::Shader {
         &self.raw
     }
 
+    /// Get the 'raw' ffi type
+    /// Take caution when cloning so it doesn't outlive the original
     #[inline]
     pub fn as_raw_mut(&mut self) -> &mut ffi::Shader {
         &mut self.raw
     }
 
+    /// Convert a 'raw' ffi object to a safe wrapper
+    ///
+    /// # Safety
+    /// * The raw object must be correctly initialized
+    /// * The raw object should be unique. Otherwise, make sure its clones don't outlive the newly created object.
     #[inline]
     pub unsafe fn from_raw(raw: ffi::Shader) -> Self {
         Self { raw }
@@ -169,12 +178,16 @@ impl Drop for Shader {
     }
 }
 
+/// Shader uniform value
+/// You shouldn't need to implement this trait yourself.
 pub trait ShaderValue
 where
     Self: Sized,
 {
+    /// Uniform type assiciated with the value
     const UNIFORM_TYPE: ShaderUniformDataType;
 
+    /// Get the value as a `void*`
     unsafe fn raw_value(&self) -> *const core::ffi::c_void {
         self as *const Self as *const _
     }

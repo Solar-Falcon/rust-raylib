@@ -24,6 +24,7 @@ assert_eq_size!(Color, ffi::Color);
 assert_eq_align!(Color, ffi::Color);
 
 impl Color {
+    /// Light gray color
     pub const LIGHTGRAY: Color = Color {
         r: 200,
         g: 200,
@@ -31,6 +32,7 @@ impl Color {
         a: 255,
     };
 
+    /// Gray color
     pub const GRAY: Color = Color {
         r: 130,
         g: 130,
@@ -38,6 +40,7 @@ impl Color {
         a: 255,
     };
 
+    /// Dark gray color
     pub const DARKGRAY: Color = Color {
         r: 80,
         g: 80,
@@ -45,6 +48,7 @@ impl Color {
         a: 255,
     };
 
+    /// Yellow color
     pub const YELLOW: Color = Color {
         r: 253,
         g: 249,
@@ -52,6 +56,7 @@ impl Color {
         a: 255,
     };
 
+    /// Gold color
     pub const GOLD: Color = Color {
         r: 255,
         g: 203,
@@ -59,6 +64,7 @@ impl Color {
         a: 255,
     };
 
+    /// Orange color
     pub const ORANGE: Color = Color {
         r: 255,
         g: 161,
@@ -66,6 +72,7 @@ impl Color {
         a: 255,
     };
 
+    /// Pink color
     pub const PINK: Color = Color {
         r: 255,
         g: 109,
@@ -73,6 +80,7 @@ impl Color {
         a: 255,
     };
 
+    /// Red color
     pub const RED: Color = Color {
         r: 230,
         g: 41,
@@ -80,6 +88,7 @@ impl Color {
         a: 255,
     };
 
+    /// Maroon color
     pub const MAROON: Color = Color {
         r: 190,
         g: 33,
@@ -87,6 +96,7 @@ impl Color {
         a: 255,
     };
 
+    /// Green color
     pub const GREEN: Color = Color {
         r: 0,
         g: 228,
@@ -94,6 +104,7 @@ impl Color {
         a: 255,
     };
 
+    /// Lime color
     pub const LIME: Color = Color {
         r: 0,
         g: 158,
@@ -101,6 +112,7 @@ impl Color {
         a: 255,
     };
 
+    /// Dark green color
     pub const DARKGREEN: Color = Color {
         r: 0,
         g: 117,
@@ -108,6 +120,7 @@ impl Color {
         a: 255,
     };
 
+    /// Sky blue color
     pub const SKYBLUE: Color = Color {
         r: 102,
         g: 191,
@@ -115,6 +128,7 @@ impl Color {
         a: 255,
     };
 
+    /// Blue color
     pub const BLUE: Color = Color {
         r: 0,
         g: 121,
@@ -122,6 +136,7 @@ impl Color {
         a: 255,
     };
 
+    /// Dark blue color
     pub const DARKBLUE: Color = Color {
         r: 0,
         g: 82,
@@ -129,6 +144,7 @@ impl Color {
         a: 255,
     };
 
+    /// Purple color
     pub const PURPLE: Color = Color {
         r: 200,
         g: 122,
@@ -136,6 +152,7 @@ impl Color {
         a: 255,
     };
 
+    /// Violet color
     pub const VIOLET: Color = Color {
         r: 135,
         g: 60,
@@ -143,6 +160,7 @@ impl Color {
         a: 255,
     };
 
+    /// Dark purple color
     pub const DARKPURPLE: Color = Color {
         r: 112,
         g: 31,
@@ -150,6 +168,7 @@ impl Color {
         a: 255,
     };
 
+    /// Beige color
     pub const BEIGE: Color = Color {
         r: 211,
         g: 176,
@@ -157,6 +176,7 @@ impl Color {
         a: 255,
     };
 
+    /// Brown color
     pub const BROWN: Color = Color {
         r: 127,
         g: 106,
@@ -164,6 +184,7 @@ impl Color {
         a: 255,
     };
 
+    /// Dark brown color
     pub const DARKBROWN: Color = Color {
         r: 76,
         g: 63,
@@ -171,6 +192,7 @@ impl Color {
         a: 255,
     };
 
+    /// White color
     pub const WHITE: Color = Color {
         r: 255,
         g: 255,
@@ -178,6 +200,7 @@ impl Color {
         a: 255,
     };
 
+    /// Black color
     pub const BLACK: Color = Color {
         r: 0,
         g: 0,
@@ -185,6 +208,7 @@ impl Color {
         a: 255,
     };
 
+    /// Blank color (alpha = 0)
     pub const BLANK: Color = Color {
         r: 0,
         g: 0,
@@ -192,6 +216,7 @@ impl Color {
         a: 0,
     };
 
+    /// Magenta color
     pub const MAGENTA: Color = Color {
         r: 255,
         g: 0,
@@ -199,6 +224,7 @@ impl Color {
         a: 255,
     };
 
+    /// Raylib white color
     pub const RAYWHITE: Color = Color {
         r: 245,
         g: 245,
@@ -206,6 +232,7 @@ impl Color {
         a: 255,
     };
 
+    /// Convenience function for creating a new color
     #[inline]
     pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
