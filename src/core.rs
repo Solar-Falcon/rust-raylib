@@ -2,29 +2,37 @@ use crate::{drawing::DrawHandle, ffi, math::Vector2, texture::Image};
 
 use std::{
     ffi::{CStr, CString},
-    time::Duration,
+    time::Duration, sync::atomic::{AtomicBool, Ordering}, marker::PhantomData,
 };
 
 pub use ffi::{
     ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
 };
 
+static INITIALIZED: AtomicBool = AtomicBool::new(false);
+
 /// Main raylib handle
 #[derive(Debug)]
-pub struct Raylib(std::marker::PhantomData<*const ()>);
+pub struct Raylib(PhantomData<*const ()>);
 
 impl Raylib {
     /// Initialize window and OpenGL context
     #[inline]
     pub fn init_window(width: u32, height: u32, title: &str) -> Option<Self> {
-        let title = CString::new(title).unwrap();
+        if !INITIALIZED.load(Ordering::Relaxed) {
+            let title = CString::new(title).unwrap();
 
-        unsafe {
-            ffi::InitWindow(width as _, height as _, title.as_ptr());
-        }
+            unsafe {
+                ffi::InitWindow(width as _, height as _, title.as_ptr());
+            }
 
-        if unsafe { ffi::IsWindowReady() } {
-            Some(Self(std::marker::PhantomData))
+            if unsafe { ffi::IsWindowReady() } {
+                INITIALIZED.store(true, Ordering::Relaxed);
+                
+                Some(Self(PhantomData))
+            } else {
+                None
+            }
         } else {
             None
         }
