@@ -411,7 +411,7 @@ impl Image {
 
     /// Create an image from text (custom sprite font)
     #[inline]
-    pub fn text_ex(font: &Font, text: &str, font_size: f32, spacing: f32, tint: Color) -> Self {
+    pub fn text_with_font(text: &str, font: &Font, font_size: f32, spacing: f32, tint: Color) -> Self {
         let text = CString::new(text).unwrap();
 
         Self {
@@ -651,74 +651,25 @@ impl Image {
 
     /// Draw pixel within an image
     #[inline]
-    pub fn draw_pixel(&mut self, x: u32, y: u32, color: Color) {
-        unsafe { ffi::ImageDrawPixel(self.as_mut_ptr(), x as _, y as _, color.into()) }
-    }
-
-    /// Draw pixel within an image (Vector version)
-    #[inline]
-    pub fn draw_pixel_v(&mut self, pos: Vector2, color: Color) {
+    pub fn draw_pixel(&mut self, pos: Vector2, color: Color) {
         unsafe { ffi::ImageDrawPixelV(self.as_mut_ptr(), pos.into(), color.into()) }
     }
 
     /// Draw line within an image
     #[inline]
-    pub fn draw_line(&mut self, start_x: u32, start_y: u32, end_x: u32, end_y: u32, color: Color) {
-        unsafe {
-            ffi::ImageDrawLine(
-                self.as_mut_ptr(),
-                start_x as _,
-                start_y as _,
-                end_x as _,
-                end_y as _,
-                color.into(),
-            )
-        }
-    }
-
-    /// Draw line within an image (Vector version)
-    #[inline]
-    pub fn draw_line_v(&mut self, start: Vector2, end: Vector2, color: Color) {
+    pub fn draw_line(&mut self, start: Vector2, end: Vector2, color: Color) {
         unsafe { ffi::ImageDrawLineV(self.as_mut_ptr(), start.into(), end.into(), color.into()) }
     }
 
     /// Draw a filled circle within an image
     #[inline]
-    pub fn draw_circle(&mut self, center_x: u32, center_y: u32, radius: u32, color: Color) {
-        unsafe {
-            ffi::ImageDrawCircle(
-                self.as_mut_ptr(),
-                center_x as _,
-                center_y as _,
-                radius as _,
-                color.into(),
-            )
-        }
-    }
-
-    /// Draw a filled circle within an image (Vector version)
-    #[inline]
-    pub fn draw_circle_v(&mut self, center: Vector2, radius: u32, color: Color) {
+    pub fn draw_circle(&mut self, center: Vector2, radius: u32, color: Color) {
         unsafe {
             ffi::ImageDrawCircleV(self.as_mut_ptr(), center.into(), radius as _, color.into())
         }
     }
 
     /// Draw circle outline within an image
-    #[inline]
-    pub fn draw_circle_lines(&mut self, center_x: u32, center_y: u32, radius: u32, color: Color) {
-        unsafe {
-            ffi::ImageDrawCircleLines(
-                self.as_mut_ptr(),
-                center_x as _,
-                center_y as _,
-                radius as _,
-                color.into(),
-            )
-        }
-    }
-
-    /// Draw circle outline within an image (Vector version)
     #[inline]
     pub fn draw_circle_lines_v(&mut self, center: Vector2, radius: u32, color: Color) {
         unsafe {
@@ -728,30 +679,7 @@ impl Image {
 
     /// Draw rectangle within an image
     #[inline]
-    pub fn draw_rectangle(&mut self, x: u32, y: u32, width: u32, height: u32, color: Color) {
-        unsafe {
-            ffi::ImageDrawRectangle(
-                self.as_mut_ptr(),
-                x as _,
-                y as _,
-                width as _,
-                height as _,
-                color.into(),
-            )
-        }
-    }
-
-    /// Draw rectangle within an image (Vector version)
-    #[inline]
-    pub fn draw_rectangle_v(&mut self, pos: Vector2, size: Vector2, color: Color) {
-        unsafe {
-            ffi::ImageDrawRectangleV(self.as_mut_ptr(), pos.into(), size.into(), color.into())
-        }
-    }
-
-    /// Draw rectangle within an image
-    #[inline]
-    pub fn draw_rectangle_rect(&mut self, rect: Rectangle, color: Color) {
+    pub fn draw_rectangle(&mut self, rect: Rectangle, color: Color) {
         unsafe { ffi::ImageDrawRectangleRec(self.as_mut_ptr(), rect.into(), color.into()) }
     }
 
@@ -770,7 +698,7 @@ impl Image {
 
     /// Draw a source image within a destination image (tint applied to source)
     #[inline]
-    pub fn draw(
+    pub fn draw_image(
         &mut self,
         source: &Image,
         source_rect: Rectangle,
@@ -790,15 +718,15 @@ impl Image {
 
     /// Draw text (using default font) within an image (destination)
     #[inline]
-    pub fn draw_text(&mut self, text: &str, x: u32, y: u32, font_size: u32, color: Color) {
+    pub fn draw_text(&mut self, text: &str, position: Vector2, font_size: u32, color: Color) {
         let text = CString::new(text).unwrap();
 
         unsafe {
             ffi::ImageDrawText(
                 self.as_mut_ptr(),
                 text.as_ptr(),
-                x as _,
-                y as _,
+                position.x as _,
+                position.y as _,
                 font_size as _,
                 color.into(),
             )
@@ -807,11 +735,11 @@ impl Image {
 
     /// Draw text (custom sprite font) within an image (destination)
     #[inline]
-    pub fn draw_text_ex(
+    pub fn draw_text_with_font(
         &mut self,
-        font: &Font,
         text: &str,
         pos: Vector2,
+        font: &Font,
         font_size: f32,
         spacing: f32,
         tint: Color,
