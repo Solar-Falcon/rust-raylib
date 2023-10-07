@@ -6,7 +6,7 @@ use crate::{
     text::Font,
 };
 
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use static_assertions::{assert_eq_align, assert_eq_size};
 
@@ -16,6 +16,66 @@ pub use crate::ffi::{CubemapLayout, NPatchLayout, PixelFormat, TextureFilter, Te
 #[inline]
 pub fn get_pixel_data_size(width: u32, height: u32, format: PixelFormat) -> usize {
     unsafe { ffi::GetPixelDataSize(width as _, height as _, format as _) as usize }
+}
+
+/// Image file format
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageFileFormat {
+    /// PNG
+    Png,
+    /// BMP
+    Bmp,
+    /// TGA
+    Tga,
+    /// JPEG
+    Jpg,
+    /// GIF
+    Gif,
+    /// PIC
+    Pic,
+    /// PNM
+    Pnm,
+    /// PSD
+    Psd,
+    /// HDR
+    Hdr,
+    /// QOI
+    Qoi,
+    /// DDS
+    Dds,
+    /// PKM
+    Pkm,
+    /// KTX
+    Ktx,
+    /// PVR
+    Pvr,
+    /// ASTC
+    Astc,
+}
+
+impl ImageFileFormat {
+    fn as_cstr(&self) -> &'static CStr {
+        use ImageFileFormat::*;
+
+        CStr::from_bytes_with_nul(match self {
+            Png => b".png\0",
+            Bmp => b".bmp\0",
+            Tga => b".tga\0",
+            Jpg => b".jpg\0",
+            Gif => b".gif\0",
+            Pic => b".pic\0",
+            Pnm => b".ppm\0",
+            Psd => b".psd\0",
+            Hdr => b".hdr\0",
+            Qoi => b".qoi\0",
+            Dds => b".dds\0",
+            Pkm => b".pkm\0",
+            Ktx => b".ktx\0",
+            Pvr => b".pvr\0",
+            Astc => b".astc\0",
+        })
+        .unwrap()
+    }
 }
 
 /// NPatchInfo, n-patch layout info
@@ -144,13 +204,23 @@ impl Image {
         }
     }
 
-    /// Load image from memory buffer, fileType refers to extension: i.e. '.png'
+    /// Load image from memory buffer
+    /// 
+    /// If `format` is None, it will make an educated guess on the ImageFileFormat (not all formats are supported for guessing).
     #[inline]
-    pub fn from_memory(filetype: &str, filedata: &[u8]) -> Option<Self> {
-        let filetype = CString::new(filetype).unwrap();
-
+    pub fn from_memory(file_data: &[u8], format: Option<ImageFileFormat>) -> Option<Self> {
         let raw = unsafe {
-            ffi::LoadImageFromMemory(filetype.as_ptr(), filedata.as_ptr(), filedata.len() as _)
+            let format = if let Some(format) = format {
+                format.as_cstr().as_ptr()
+            } else {
+                CStr::from_bytes_with_nul(b".png\0").unwrap().as_ptr()
+            };
+
+            ffi::LoadImageFromMemory(
+                format,
+                file_data.as_ptr(),
+                file_data.len() as _,
+            )
         };
 
         if unsafe { ffi::IsImageReady(raw.clone()) } {
@@ -916,11 +986,7 @@ impl Texture {
             && ((rect.y + rect.height) as u32) < self.height()
         {
             unsafe {
-                ffi::UpdateTextureRec(
-                    self.raw.clone(),
-                    rect.into(),
-                    pixels.as_ptr() as *const _,
-                );
+                ffi::UpdateTextureRec(self.raw.clone(), rect.into(), pixels.as_ptr() as *const _);
             }
             true
         } else {
