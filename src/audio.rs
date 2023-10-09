@@ -1,6 +1,35 @@
-use std::{ffi::CString, time::Duration};
+use std::{ffi::{CString, CStr}, time::Duration};
 
 use crate::ffi;
+
+/// Audio file format
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AudioFormat {
+    /// Wave
+    Wav,
+    /// OGG
+    Ogg,
+    /// MP3
+    Mp3,
+    /// QOA
+    Qoa,
+    /// FLAC
+    Flac,
+}
+
+impl AudioFormat {
+    fn as_cstr(&self) -> &'static CStr {
+        use AudioFormat::*;
+
+        CStr::from_bytes_with_nul(match self {
+            Wav => b".wav\0",
+            Ogg => b".ogg\0",
+            Mp3 => b".mp3\0",
+            Qoa => b".qoa\0",
+            Flac => b".flac\0",
+        }).unwrap()
+    }
+}
 
 /// An object that handles audio playback
 #[derive(Debug)]
@@ -81,13 +110,11 @@ impl Wave {
         }
     }
 
-    /// Load wave from memory buffer, fileType refers to extension: i.e. '.wav'
+    /// Load wave from memory buffer
     #[inline]
-    pub fn from_memory(file_type: &str, file_data: &[u8]) -> Option<Self> {
-        let file_type = CString::new(file_type).unwrap();
-
+    pub fn from_memory(file_data: &[u8], format: AudioFormat) -> Option<Self> {
         let raw = unsafe {
-            ffi::LoadWaveFromMemory(file_type.as_ptr(), file_data.as_ptr(), file_data.len() as _)
+            ffi::LoadWaveFromMemory(format.as_cstr().as_ptr(), file_data.as_ptr(), file_data.len() as _)
         };
 
         if unsafe { ffi::IsWaveReady(raw.clone()) } {
@@ -507,11 +534,9 @@ impl Music {
     }
     /// Load music stream from data
     #[inline]
-    pub fn from_memory(file_type: &str, data: &[u8]) -> Option<Self> {
-        let file_type = CString::new(file_type).unwrap();
-
+    pub fn from_memory(data: &[u8], format: AudioFormat) -> Option<Self> {
         let raw = unsafe {
-            ffi::LoadMusicStreamFromMemory(file_type.as_ptr(), data.as_ptr(), data.len() as _)
+            ffi::LoadMusicStreamFromMemory(format.as_cstr().as_ptr(), data.as_ptr(), data.len() as _)
         };
 
         if unsafe { ffi::IsMusicReady(raw.clone()) } {

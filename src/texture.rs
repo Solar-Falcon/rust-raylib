@@ -20,7 +20,7 @@ pub fn get_pixel_data_size(width: u32, height: u32, format: PixelFormat) -> usiz
 
 /// Image file format
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ImageFileFormat {
+pub enum ImageFormat {
     /// PNG
     Png,
     /// BMP
@@ -53,9 +53,9 @@ pub enum ImageFileFormat {
     Astc,
 }
 
-impl ImageFileFormat {
+impl ImageFormat {
     fn as_cstr(&self) -> &'static CStr {
-        use ImageFileFormat::*;
+        use ImageFormat::*;
 
         CStr::from_bytes_with_nul(match self {
             Png => b".png\0",
@@ -206,9 +206,9 @@ impl Image {
 
     /// Load image from memory buffer
     /// 
-    /// If `format` is None, it will make an educated guess on the ImageFileFormat (not all formats are supported for guessing).
+    /// If `format` is None, it will make an educated guess on the ImageFormat (not all formats are supported for guessing).
     #[inline]
-    pub fn from_memory(file_data: &[u8], format: Option<ImageFileFormat>) -> Option<Self> {
+    pub fn from_memory(file_data: &[u8], format: Option<ImageFormat>) -> Option<Self> {
         let raw = unsafe {
             let format = if let Some(format) = format {
                 format.as_cstr().as_ptr()
