@@ -1,6 +1,6 @@
 [package]
 name = "rust-raylib"
-version = "0.45.6"
+version = "0.45.7"
 description = "Unsafe bindings for Raylib 4.5 and safe wrappers for them."
 authors = ["Solar-Falcon"]
 edition = "2021"

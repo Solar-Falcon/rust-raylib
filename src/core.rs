@@ -6,7 +6,7 @@ use std::{
 };
 
 pub use ffi::{
-    ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
+    ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor, TraceLogLevel,
 };
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -755,6 +755,12 @@ impl Raylib {
         }
 
         DrawHandle(self)
+    }
+
+    /// Set the current threshold (minimum) log level (for raylib's own logging)
+    #[inline]
+    pub fn set_trace_log_level(&mut self, level: TraceLogLevel) {
+        unsafe { ffi::SetTraceLogLevel(level as _) }
     }
 }
 

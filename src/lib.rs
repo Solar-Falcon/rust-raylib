@@ -1,7 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 
-#[allow(missing_docs)]
 /// Raw ffi bindings
 pub mod ffi;
 pub use ffi::{RAYLIB_VERSION, RAYLIB_VERSION_MAJOR, RAYLIB_VERSION_MINOR, RAYLIB_VERSION_PATCH};
@@ -35,9 +33,6 @@ pub use crate::core::*;
 
         /// Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...)
         pub fn TraceLog(logLevel: u32, text: *const core::ffi::c_char, ...) {}
-
-        /// Set the current threshold (minimum) log level
-        pub fn SetTraceLogLevel(logLevel: u32) {}
 
         /// Internal memory allocator
         pub fn MemAlloc(size: core::ffi::c_uint) -> *mut core::ffi::c_void;

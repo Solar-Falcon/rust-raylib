@@ -146,7 +146,7 @@ impl From<ffi::Rectangle> for Rectangle {
 
 /// Ray, ray for raycasting
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ray {
     /// Ray position (origin)
     pub position: Vector3,
@@ -173,7 +173,7 @@ impl From<ffi::Ray> for Ray {
 
 /// RayCollision, ray hit information
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RayCollision {
     /// Did the ray hit something?
     pub hit: bool,
@@ -204,7 +204,7 @@ impl From<ffi::RayCollision> for RayCollision {
 
 /// BoundingBox
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BoundingBox {
     /// Minimum vertex box-corner
     pub min: Vector3,
@@ -231,7 +231,7 @@ impl From<ffi::BoundingBox> for BoundingBox {
 
 /// Transform, vertex transformation data
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Transform {
 	/// Translation
 	pub translation: Vector3,
@@ -260,7 +260,7 @@ impl From<ffi::Transform> for Transform {
 
 /// Camera2D, defines position/orientation in 2d space
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Camera2D {
     /// Camera offset (displacement from target)
@@ -312,7 +312,7 @@ impl From<ffi::Camera2D> for Camera2D {
 
 /// Camera, defines position/orientation in 3d space
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Camera3D {
     /// Camera position
