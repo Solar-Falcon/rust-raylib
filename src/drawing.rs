@@ -419,10 +419,7 @@ where
         params: DrawTextureParams,
         patch_info: NPatchInfo,
     ) {
-        let source =
-            params
-                .source
-                .unwrap_or(Rectangle::new(0., 0., tex.width() as _, tex.height() as _));
+        let source = patch_info.source;
 
         unsafe {
             ffi::DrawTextureNPatch(
