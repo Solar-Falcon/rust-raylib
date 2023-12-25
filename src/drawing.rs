@@ -10,7 +10,10 @@ use crate::{
     Raylib,
 };
 
-use std::{ffi::CString, ops::{Deref, Range}};
+use std::{
+    ffi::CString,
+    ops::{Deref, Range},
+};
 
 pub use crate::ffi::BlendMode;
 
@@ -66,7 +69,11 @@ impl Default for DrawBillboardParams {
     fn default() -> Self {
         Self {
             source: None,
-            up: Vector3 { x: 0., y: 1., z: 0. },
+            up: Vector3 {
+                x: 0.,
+                y: 1.,
+                z: 0.,
+            },
             origin: Vector2 { x: 0., y: 0. },
             rotation: 0.,
             tint: Color::WHITE,
@@ -289,7 +296,7 @@ impl<'a, T> Drop for DrawVrStereoMode<'a, T> {
     }
 }
 
-/// A trait that contains all the drawing functions 
+/// A trait that contains all the drawing functions
 pub trait Draw
 where
     Self: Sized,
@@ -368,10 +375,7 @@ where
 
     /// Begin stereo rendering (requires VR simulator)
     #[inline]
-    fn begin_vr_stereo_mode(
-        &mut self,
-        config: VrStereoConfig,
-    ) -> DrawVrStereoMode<Self> {
+    fn begin_vr_stereo_mode(&mut self, config: VrStereoConfig) -> DrawVrStereoMode<Self> {
         unsafe {
             ffi::BeginVrStereoMode(config.into());
         }
@@ -381,23 +385,24 @@ where
 
     /// Draw a part of a texture defined by source and destination rectangles
     #[inline]
-    fn draw_texture(
-        &mut self,
-        tex: &Texture,
-        position: Vector2,
-        params: DrawTextureParams,
-    ) {
+    fn draw_texture(&mut self, tex: &Texture, position: Vector2, params: DrawTextureParams) {
         // rectangle checks?
+        let source =
+            params
+                .source
+                .unwrap_or(Rectangle::new(0., 0., tex.width() as _, tex.height() as _));
+
         unsafe {
             ffi::DrawTexturePro(
                 tex.raw.clone(),
-                params.source.unwrap_or(Rectangle::new(0., 0., tex.width() as _, tex.height() as _)).into(),
+                source.into(),
                 Rectangle::new(
                     position.x,
                     position.y,
-                    params.scale.x * tex.width() as f32,
-                    params.scale.y * tex.height() as f32,
-                ).into(),
+                    params.scale.x * source.width,
+                    params.scale.y * source.height,
+                )
+                .into(),
                 params.origin.into(),
                 params.rotation,
                 params.tint.into(),
@@ -414,11 +419,22 @@ where
         params: DrawTextureParams,
         patch_info: NPatchInfo,
     ) {
+        let source =
+            params
+                .source
+                .unwrap_or(Rectangle::new(0., 0., tex.width() as _, tex.height() as _));
+
         unsafe {
             ffi::DrawTextureNPatch(
                 tex.raw.clone(),
                 patch_info.into(),
-                Rectangle::new(position.x, position.y, params.scale.x * tex.width() as f32, params.scale.y * tex.height() as f32).into(),
+                Rectangle::new(
+                    position.x,
+                    position.y,
+                    params.scale.x * source.width,
+                    params.scale.y * source.height,
+                )
+                .into(),
                 params.origin.into(),
                 params.rotation,
                 params.tint.into(),
@@ -520,24 +536,30 @@ where
 
     /// Draw ellipse
     #[inline]
-    fn draw_ellipse(
-        &mut self,
-        center: Vector2,
-        radius: Vector2,
-        color: Color,
-    ) {
-        unsafe { ffi::DrawEllipse(center.x as _, center.y as _, radius.x as _, radius.y as _, color.into()) }
+    fn draw_ellipse(&mut self, center: Vector2, radius: Vector2, color: Color) {
+        unsafe {
+            ffi::DrawEllipse(
+                center.x as _,
+                center.y as _,
+                radius.x as _,
+                radius.y as _,
+                color.into(),
+            )
+        }
     }
 
     /// Draw ellipse outline
     #[inline]
-    fn draw_ellipse_lines(
-        &mut self,
-        center: Vector2,
-        radius: Vector2,
-        color: Color,
-    ) {
-        unsafe { ffi::DrawEllipseLines(center.x as _, center.y as _, radius.x as _, radius.y as _, color.into()) }
+    fn draw_ellipse_lines(&mut self, center: Vector2, radius: Vector2, color: Color) {
+        unsafe {
+            ffi::DrawEllipseLines(
+                center.x as _,
+                center.y as _,
+                radius.x as _,
+                radius.y as _,
+                color.into(),
+            )
+        }
     }
 
     /// Draw a piece of a circle
@@ -586,14 +608,16 @@ where
 
     /// Draw a gradient-filled circle
     #[inline]
-    fn draw_circle_gradient(
-        &mut self,
-        center: Vector2,
-        radius: f32,
-        color1: Color,
-        color2: Color,
-    ) {
-        unsafe { ffi::DrawCircleGradient(center.x as _, center.y as _, radius, color1.into(), color2.into()) }
+    fn draw_circle_gradient(&mut self, center: Vector2, radius: f32, color1: Color, color2: Color) {
+        unsafe {
+            ffi::DrawCircleGradient(
+                center.x as _,
+                center.y as _,
+                radius,
+                color1.into(),
+                color2.into(),
+            )
+        }
     }
 
     /// Draw ring
@@ -654,7 +678,15 @@ where
     /// Draw rectangle outline
     #[inline]
     fn draw_rectangle_lines(&mut self, rect: Rectangle, color: Color) {
-        unsafe { ffi::DrawRectangleLines(rect.x as _, rect.y as _, rect.width as _, rect.height as _, color.into()) }
+        unsafe {
+            ffi::DrawRectangleLines(
+                rect.x as _,
+                rect.y as _,
+                rect.width as _,
+                rect.height as _,
+                color.into(),
+            )
+        }
     }
 
     /// Draw rectangle outline with thickness
@@ -677,14 +709,16 @@ where
 
     /// Draw a vertical-gradient-filled rectangle
     #[inline]
-    fn draw_rectangle_gradient_vertical(
-        &mut self,
-        rect: Rectangle,
-        color1: Color,
-        color2: Color,
-    ) {
+    fn draw_rectangle_gradient_vertical(&mut self, rect: Rectangle, color1: Color, color2: Color) {
         unsafe {
-            ffi::DrawRectangleGradientV(rect.x as _, rect.y as _, rect.width as _, rect.height as _, color1.into(), color2.into())
+            ffi::DrawRectangleGradientV(
+                rect.x as _,
+                rect.y as _,
+                rect.width as _,
+                rect.height as _,
+                color1.into(),
+                color2.into(),
+            )
         }
     }
 
@@ -697,7 +731,14 @@ where
         color2: Color,
     ) {
         unsafe {
-            ffi::DrawRectangleGradientH(rect.x as _, rect.y as _, rect.width as _, rect.height as _, color1.into(), color2.into())
+            ffi::DrawRectangleGradientH(
+                rect.x as _,
+                rect.y as _,
+                rect.width as _,
+                rect.height as _,
+                color1.into(),
+                color2.into(),
+            )
         }
     }
 
@@ -841,7 +882,15 @@ where
     fn draw_text(&mut self, text: &str, position: Vector2, font_size: u32, color: Color) {
         let text = CString::new(text).unwrap();
 
-        unsafe { ffi::DrawText(text.as_ptr(), position.x as _, position.y as _, font_size as _, color.into()) }
+        unsafe {
+            ffi::DrawText(
+                text.as_ptr(),
+                position.x as _,
+                position.y as _,
+                font_size as _,
+                color.into(),
+            )
+        }
     }
 
     /// Draw text using font and additional parameters
@@ -1278,7 +1327,15 @@ where
             ffi::DrawBillboardPro(
                 camera.into(),
                 texture.raw.clone(),
-                params.source.unwrap_or(Rectangle::new(0., 0., texture.width() as _, texture.height() as _)).into(),
+                params
+                    .source
+                    .unwrap_or(Rectangle::new(
+                        0.,
+                        0.,
+                        texture.width() as _,
+                        texture.height() as _,
+                    ))
+                    .into(),
                 position.into(),
                 params.up.into(),
                 size.into(),

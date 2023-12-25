@@ -1,11 +1,13 @@
 use std::{ffi::CString, mem::ManuallyDrop};
 
-use static_assertions::{assert_eq_size, assert_eq_align};
+use static_assertions::{assert_eq_align, assert_eq_size};
 
 use crate::{
+    color::Color,
     ffi,
-    math::{BoundingBox, Vector3, Vector4, Vector2, Matrix, Transform},
-    texture::{Image, Texture2D}, color::Color, shader::Shader,
+    math::{BoundingBox, Matrix, Transform, Vector2, Vector3, Vector4},
+    shader::Shader,
+    texture::{Image, Texture2D},
 };
 
 pub use crate::ffi::MaterialMapIndex;
@@ -298,40 +300,57 @@ pub struct Model {
 }
 
 impl Model {
-	/// Local transform matrix
+    /// Local transform matrix
     #[inline]
     pub fn transform(&self) -> Matrix {
         self.raw.transform.clone().into()
     }
-    
-	/// Local transform matrix
+
+    /// Local transform matrix
     #[inline]
     pub fn set_transform(&mut self, mat: Matrix) {
         self.raw.transform = mat.into();
     }
 
-	/// Meshes array
+    /// Meshes array
+    ///
+    /// Note that calling `ManuallyDrop::drop` on the returned values is a *very very bad* idea.
     #[inline]
     pub fn meshes(&self) -> &[ManuallyDrop<Mesh>] {
         unsafe { std::slice::from_raw_parts(self.raw.meshes as *const _, self.raw.meshCount as _) }
     }
 
     /// Meshes array
+    ///
+    /// Note that calling `ManuallyDrop::drop` on the returned values is a *very very bad* idea.
     #[inline]
     pub fn meshes_mut(&mut self) -> &mut [ManuallyDrop<Mesh>] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.meshes as *mut _, self.raw.meshCount as _) }
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.meshes as *mut _, self.raw.meshCount as _)
+        }
     }
 
-	/// Materials array
+    /// Materials array
+    ///
+    /// Note that calling `ManuallyDrop::drop` on the returned values is a *very very bad* idea.
     #[inline]
     pub fn materials(&self) -> &[ManuallyDrop<Material>] {
-        unsafe { std::slice::from_raw_parts(self.raw.materials as *const _, self.raw.materialCount as _) }
+        unsafe {
+            std::slice::from_raw_parts(self.raw.materials as *const _, self.raw.materialCount as _)
+        }
     }
 
-	/// Materials array
+    /// Materials array
+    ///
+    /// Note that calling `ManuallyDrop::drop` on the returned values is a *very very bad* idea.
     #[inline]
     pub fn materials_mut(&mut self) -> &mut [ManuallyDrop<Material>] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.materials as *mut _, self.raw.materialCount as _) }
+        unsafe {
+            std::slice::from_raw_parts_mut(
+                self.raw.materials as *mut _,
+                self.raw.materialCount as _,
+            )
+        }
     }
 
     /// Bones information (skeleton)
@@ -340,22 +359,26 @@ impl Model {
         unsafe { std::slice::from_raw_parts(self.raw.bones as *const _, self.raw.boneCount as _) }
     }
 
-	/// Bones information (skeleton)
+    /// Bones information (skeleton)
     #[inline]
     pub fn bones_mut(&mut self) -> &mut [ffi::BoneInfo] {
         unsafe { std::slice::from_raw_parts_mut(self.raw.bones, self.raw.boneCount as _) }
     }
 
-	/// Bones base transformation (pose)
+    /// Bones base transformation (pose)
     #[inline]
     pub fn bind_pose(&self) -> &[Transform] {
-        unsafe { std::slice::from_raw_parts(self.raw.bindPose as *const _, self.raw.boneCount as _) }
+        unsafe {
+            std::slice::from_raw_parts(self.raw.bindPose as *const _, self.raw.boneCount as _)
+        }
     }
 
-	/// Bones base transformation (pose)
+    /// Bones base transformation (pose)
     #[inline]
     pub fn bind_pose_mut(&mut self) -> &mut [Transform] {
-        unsafe { std::slice::from_raw_parts_mut(self.raw.bindPose as *mut _, self.raw.boneCount as _) }
+        unsafe {
+            std::slice::from_raw_parts_mut(self.raw.bindPose as *mut _, self.raw.boneCount as _)
+        }
     }
 
     /// Load model from files (meshes and materials)
@@ -444,12 +467,12 @@ impl Drop for Model {
 #[repr(C)]
 #[derive(Debug)]
 pub struct MaterialMap {
-	/// Material map texture
-	pub texture: ManuallyDrop<Texture2D>,
-	/// Material map color
-	pub color: Color,
-	/// Material map value
-	pub value: f32,
+    /// Material map texture
+    pub texture: ManuallyDrop<Texture2D>,
+    /// Material map color
+    pub color: Color,
+    /// Material map value
+    pub value: f32,
 }
 
 assert_eq_size!(MaterialMap, ffi::MaterialMap);
@@ -463,7 +486,7 @@ pub struct Material {
 }
 
 impl Material {
-	/// Material shader
+    /// Material shader
     #[inline]
     pub fn shader(&self) -> &ManuallyDrop<Shader> {
         unsafe { std::mem::transmute(&self.raw.shader) }
@@ -526,11 +549,7 @@ impl Material {
         let texture = ManuallyDrop::new(texture);
 
         unsafe {
-            ffi::SetMaterialTexture(
-                &mut self.raw as *mut _,
-                map_type as _,
-                texture.raw.clone(),
-            );
+            ffi::SetMaterialTexture(&mut self.raw as *mut _, map_type as _, texture.raw.clone());
         }
     }
 
@@ -589,36 +608,46 @@ impl ModelAnimation {
         unsafe { std::slice::from_raw_parts(self.raw.bones as *const _, self.raw.boneCount as _) }
     }
 
-	/// Bones information (skeleton)
+    /// Bones information (skeleton)
     #[inline]
     pub fn bones_mut(&mut self) -> &mut [ffi::BoneInfo] {
         unsafe { std::slice::from_raw_parts_mut(self.raw.bones, self.raw.boneCount as _) }
     }
 
-	/// Poses array by frame
+    /// Poses array by frame
     #[inline]
     pub fn frame_poses(&self) -> Vec<&[Transform]> {
         let mut vec = Vec::new();
 
         for i in 0..(self.raw.frameCount as usize) {
-            vec.push(unsafe { std::slice::from_raw_parts(self.raw.framePoses.add(i).read() as *const _, self.raw.boneCount as _) })
+            vec.push(unsafe {
+                std::slice::from_raw_parts(
+                    self.raw.framePoses.add(i).read() as *const _,
+                    self.raw.boneCount as _,
+                )
+            })
         }
 
         vec
     }
 
-	/// Poses array by frame
+    /// Poses array by frame
     #[inline]
     pub fn frame_poses_mut(&mut self) -> Vec<&mut [Transform]> {
         let mut vec = Vec::new();
 
         for i in 0..(self.raw.frameCount as usize) {
-            vec.push(unsafe { std::slice::from_raw_parts_mut(self.raw.framePoses.add(i).read() as *mut _, self.raw.boneCount as _) })
+            vec.push(unsafe {
+                std::slice::from_raw_parts_mut(
+                    self.raw.framePoses.add(i).read() as *mut _,
+                    self.raw.boneCount as _,
+                )
+            })
         }
 
         vec
     }
-    
+
     /// Load model animations from file
     #[inline]
     pub fn from_file(file_name: &str) -> Vec<Self> {

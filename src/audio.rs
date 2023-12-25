@@ -1,4 +1,7 @@
-use std::{ffi::{CString, CStr}, time::Duration};
+use std::{
+    ffi::{CStr, CString},
+    time::Duration,
+};
 
 use crate::ffi;
 
@@ -27,7 +30,8 @@ impl AudioFormat {
             Mp3 => b".mp3\0",
             Qoa => b".qoa\0",
             Flac => b".flac\0",
-        }).unwrap()
+        })
+        .unwrap()
     }
 }
 
@@ -114,7 +118,11 @@ impl Wave {
     #[inline]
     pub fn from_memory(file_data: &[u8], format: AudioFormat) -> Option<Self> {
         let raw = unsafe {
-            ffi::LoadWaveFromMemory(format.as_cstr().as_ptr(), file_data.as_ptr(), file_data.len() as _)
+            ffi::LoadWaveFromMemory(
+                format.as_cstr().as_ptr(),
+                file_data.as_ptr(),
+                file_data.len() as _,
+            )
         };
 
         if unsafe { ffi::IsWaveReady(raw.clone()) } {
@@ -536,7 +544,11 @@ impl Music {
     #[inline]
     pub fn from_memory(data: &[u8], format: AudioFormat) -> Option<Self> {
         let raw = unsafe {
-            ffi::LoadMusicStreamFromMemory(format.as_cstr().as_ptr(), data.as_ptr(), data.len() as _)
+            ffi::LoadMusicStreamFromMemory(
+                format.as_cstr().as_ptr(),
+                data.as_ptr(),
+                data.len() as _,
+            )
         };
 
         if unsafe { ffi::IsMusicReady(raw.clone()) } {

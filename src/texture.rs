@@ -205,7 +205,7 @@ impl Image {
     }
 
     /// Load image from memory buffer
-    /// 
+    ///
     /// If `format` is None, it will make an educated guess on the ImageFormat (not all formats are supported for guessing).
     #[inline]
     pub fn from_memory(file_data: &[u8], format: Option<ImageFormat>) -> Option<Self> {
@@ -216,11 +216,7 @@ impl Image {
                 CStr::from_bytes_with_nul(b".png\0").unwrap().as_ptr()
             };
 
-            ffi::LoadImageFromMemory(
-                format,
-                file_data.as_ptr(),
-                file_data.len() as _,
-            )
+            ffi::LoadImageFromMemory(format, file_data.as_ptr(), file_data.len() as _)
         };
 
         if unsafe { ffi::IsImageReady(raw.clone()) } {
@@ -411,7 +407,13 @@ impl Image {
 
     /// Create an image from text (custom sprite font)
     #[inline]
-    pub fn text_with_font(text: &str, font: &Font, font_size: f32, spacing: f32, tint: Color) -> Self {
+    pub fn text_with_font(
+        text: &str,
+        font: &Font,
+        font_size: f32,
+        spacing: f32,
+        tint: Color,
+    ) -> Self {
         let text = CString::new(text).unwrap();
 
         Self {

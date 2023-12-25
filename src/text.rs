@@ -131,9 +131,7 @@ impl Font {
     pub fn measure_text_ex(&self, text: &str, font_size: f32, spacing: f32) -> Vector2 {
         let text = CString::new(text).unwrap();
 
-        unsafe {
-            ffi::MeasureTextEx(self.raw.clone(), text.as_ptr(), font_size, spacing).into()
-        }
+        unsafe { ffi::MeasureTextEx(self.raw.clone(), text.as_ptr(), font_size, spacing).into() }
     }
 
     /// Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found

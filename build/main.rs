@@ -51,7 +51,7 @@ fn build_raylib() {
 
 fn main() {
     println!("cargo:rerun-if-changed={}", RAYLIB_API_PATH);
-    
+
     build_raylib();
 
     let api_text = fs::read_to_string(RAYLIB_API_PATH).expect("Unable to read raylib api file");

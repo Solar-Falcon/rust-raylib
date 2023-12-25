@@ -233,12 +233,12 @@ impl From<ffi::BoundingBox> for BoundingBox {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Transform {
-	/// Translation
-	pub translation: Vector3,
-	/// Rotation
-	pub rotation: Quaternion,
-	/// Scale
-	pub scale: Vector3,
+    /// Translation
+    pub translation: Vector3,
+    /// Rotation
+    pub rotation: Quaternion,
+    /// Scale
+    pub scale: Vector3,
 }
 
 assert_eq_size!(Transform, ffi::Transform);
@@ -280,19 +280,19 @@ impl Camera2D {
     /// Get camera 2d transform matrix
     #[inline]
     pub fn get_matrix(&self) -> Matrix {
-        unsafe { ffi::GetCameraMatrix2D(self.clone().into()).into() }
+        unsafe { ffi::GetCameraMatrix2D((*self).into()).into() }
     }
 
     /// Get the world space position for a 2d camera screen space position
     #[inline]
     pub fn screen_to_world(&self, position: Vector2) -> Vector2 {
-        unsafe { ffi::GetScreenToWorld2D(position.into(), self.clone().into()).into() }
+        unsafe { ffi::GetScreenToWorld2D(position.into(), (*self).into()).into() }
     }
 
     /// Get the screen space position for a 2d camera world space position
     #[inline]
     pub fn world_to_screen(&self, position: Vector2) -> Vector2 {
-        unsafe { ffi::GetWorldToScreen2D(position.into(), self.clone().into()).into() }
+        unsafe { ffi::GetWorldToScreen2D(position.into(), (*self).into()).into() }
     }
 }
 
@@ -353,19 +353,19 @@ impl Camera3D {
     /// Get a ray trace from mouse position
     #[inline]
     pub fn get_mouse_ray(&self, mouse_position: Vector2) -> Ray {
-        unsafe { ffi::GetMouseRay(mouse_position.into(), self.clone().into()).into() }
+        unsafe { ffi::GetMouseRay(mouse_position.into(), (*self).into()).into() }
     }
 
     /// Get camera transform matrix (view matrix)
     #[inline]
     pub fn get_matrix(&self) -> Matrix {
-        unsafe { ffi::GetCameraMatrix(self.clone().into()).into() }
+        unsafe { ffi::GetCameraMatrix((*self).into()).into() }
     }
 
     /// Get the screen space position for a 3d world space position
     #[inline]
     pub fn world_to_screen(&self, position: Vector3) -> Vector2 {
-        unsafe { ffi::GetWorldToScreen(position.into(), self.clone().into()).into() }
+        unsafe { ffi::GetWorldToScreen(position.into(), (*self).into()).into() }
     }
 
     /// Get size position for a 3d world space position
@@ -374,7 +374,7 @@ impl Camera3D {
         unsafe {
             ffi::GetWorldToScreenEx(
                 position.into(),
-                self.clone().into(),
+                (*self).into(),
                 width as _,
                 height as _,
             )

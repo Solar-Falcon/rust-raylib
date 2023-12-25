@@ -2,11 +2,14 @@ use crate::{drawing::DrawHandle, ffi, math::Vector2, texture::Image};
 
 use std::{
     ffi::{CStr, CString},
-    time::Duration, sync::atomic::{AtomicBool, Ordering}, marker::PhantomData,
+    marker::PhantomData,
+    sync::atomic::{AtomicBool, Ordering},
+    time::Duration,
 };
 
 pub use ffi::{
-    ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor, TraceLogLevel,
+    ConfigFlags, GamepadAxis, GamepadButton, Gesture, KeyboardKey, MouseButton, MouseCursor,
+    TraceLogLevel,
 };
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -28,7 +31,7 @@ impl Raylib {
 
             if unsafe { ffi::IsWindowReady() } {
                 INITIALIZED.store(true, Ordering::Relaxed);
-                
+
                 Some(Self(PhantomData))
             } else {
                 None

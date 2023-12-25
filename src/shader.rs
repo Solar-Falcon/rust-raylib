@@ -96,9 +96,7 @@ impl Shader {
     pub fn get_location_attribute(&self, attribute_name: &str) -> u32 {
         let attribute_name = CString::new(attribute_name).unwrap();
 
-        unsafe {
-            ffi::GetShaderLocationAttrib(self.raw.clone(), attribute_name.as_ptr()) as _
-        }
+        unsafe { ffi::GetShaderLocationAttrib(self.raw.clone(), attribute_name.as_ptr()) as _ }
     }
 
     /// Set shader uniform value
@@ -137,13 +135,7 @@ impl Shader {
     /// Set shader uniform value for texture (sampler2d)
     #[inline]
     pub fn set_value_texture(&mut self, loc_index: u32, texture: &Texture2D) {
-        unsafe {
-            ffi::SetShaderValueTexture(
-                self.raw.clone(),
-                loc_index as _,
-                texture.raw.clone(),
-            )
-        }
+        unsafe { ffi::SetShaderValueTexture(self.raw.clone(), loc_index as _, texture.raw.clone()) }
     }
 
     /// Get the 'raw' ffi type
